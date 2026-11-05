@@ -91,7 +91,7 @@ public static partial class App {
    }
   } catch(System.IO.IOException) {} catch(InvalidOperationException) {}
  }
- public const string Version = "v.1.0.81";
+ public const string Version = "v.1.0.82";
  static readonly ConcurrentDictionary<uint,Host> hosts=new ConcurrentDictionary<uint,Host>();
  static CancellationTokenSource cancel;
  static Task scan;
@@ -3968,6 +3968,15 @@ public static partial class App {
  public static void Run(string subnet,int[] scanPorts) {
   if(Console.IsInputRedirected || Console.IsOutputRedirected) throw new InvalidOperationException(T("Interaktive Konsole erforderlich."));
   if(scanPorts==null || scanPorts.Length==0 || scanPorts.Any(p=>p<1||p>65535)) throw new ArgumentException("Ports muessen zwischen 1 und 65535 liegen.");
+  var previousEncoding=Console.OutputEncoding;
+  try {
+   // Windows writes UTF-16 directly to the console, independent of the shell's code page.
+   Console.OutputEncoding=IsWindows?System.Text.Encoding.Unicode:new System.Text.UTF8Encoding(false);
+   RunInteractive(subnet,scanPorts);
+  } finally { Console.OutputEncoding=previousEncoding; }
+ }
+
+ static void RunInteractive(string subnet,int[] scanPorts) {
   ports=scanPorts.Distinct().OrderBy(p=>p).ToArray(); string input=string.IsNullOrWhiteSpace(subnet)?DefaultSubnet():subnet; bool visible=IsWindows?Console.CursorVisible:true;
   IntPtr inputHandle=IsWindows?GetStdHandle(-10):IntPtr.Zero; uint originalInputMode=0;
   if(IsWindows) {
@@ -3979,7 +3988,7 @@ public static partial class App {
   if((inputMode & lineInput)==0) inputMode &= ~echoInput;
   // Mouse support is optional; keep the keyboard usable if the terminal rejects the mode.
   SetConsoleMode(inputHandle,inputMode);
-  } else { Console.OutputEncoding=new System.Text.UTF8Encoding(false); Console.Write("\u001b[?1049h\u001b[?1000h\u001b[?1006h"); }
+  } else Console.Write("\u001b[?1049h\u001b[?1000h\u001b[?1006h");
   InitializeThemeOutput();
   if(trueColorEnabled) ApplyTheme(LoadThemeSetting());
   mouseLeftDown=false; keyRepeats=0; linuxPendingKeys.Clear();
