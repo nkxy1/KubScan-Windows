@@ -91,7 +91,7 @@ public static partial class App {
    }
   } catch(System.IO.IOException) {} catch(InvalidOperationException) {}
  }
- public const string Version = "v.1.0.79";
+ public const string Version = "v.1.0.80";
  static readonly ConcurrentDictionary<uint,Host> hosts=new ConcurrentDictionary<uint,Host>();
  static CancellationTokenSource cancel;
  static Task scan;
@@ -3972,7 +3972,13 @@ public static partial class App {
   IntPtr inputHandle=IsWindows?GetStdHandle(-10):IntPtr.Zero; uint originalInputMode=0;
   if(IsWindows) {
   if(!GetConsoleMode(inputHandle,out originalInputMode)) throw new InvalidOperationException(T("Konsoleneingabe nicht verfuegbar."));
-  if(!SetConsoleMode(inputHandle,(originalInputMode | 0x98u) & ~0x40u)) throw new InvalidOperationException(T("Mauseingabe konnte nicht aktiviert werden."));
+  const uint lineInput=0x02,echoInput=0x04,windowInput=0x08,mouseInput=0x10;
+  const uint quickEdit=0x40,extendedFlags=0x80,virtualTerminalInput=0x200;
+  uint inputMode=(originalInputMode | windowInput | mouseInput | extendedFlags) & ~(quickEdit | virtualTerminalInput);
+  // Echo is only valid with line input. ReadConsoleInput uses native key records.
+  if((inputMode & lineInput)==0) inputMode &= ~echoInput;
+  // Mouse support is optional; keep the keyboard usable if the terminal rejects the mode.
+  SetConsoleMode(inputHandle,inputMode);
   } else { Console.OutputEncoding=new System.Text.UTF8Encoding(false); Console.Write("\u001b[?1049h\u001b[?1000h\u001b[?1006h"); }
   InitializeThemeOutput();
   if(trueColorEnabled) ApplyTheme(LoadThemeSetting());
