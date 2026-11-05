@@ -14,6 +14,22 @@ dotnet publish .\WinUI\KubScan.WinUI.csproj -c Release -o .\dist\win-x64
 
 Danach `dist\win-x64\KubScan.WinUI.exe` starten. Den gesamten Ausgabeordner zusammenhalten, da er auch die .NET- und Windows-App-SDK-Laufzeiten enthält. Sollte das Manifestwerkzeug den Netzwerkpfad ablehnen, den Build aus einer lokalen Arbeitskopie starten.
 
+## WinUI, Terminal und Kommandozeile starten
+
+Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Mit `--tui` öffnet dieselbe EXE die bisherige Terminaloberfläche in einer eigenen Konsole. Dort beendet F10 das Programm.
+
+```powershell
+.\dist\win-x64\KubScan.WinUI.exe
+.\dist\win-x64\KubScan.WinUI.exe --tui
+.\dist\win-x64\KubScan.WinUI.exe --tui -Subnet 192.168.1.0/24
+```
+
+Für automatische Scans akzeptiert die EXE weiterhin die bisherigen Kommandozeilenargumente. In PowerShell wartet `Start-Process -Wait -NoNewWindow` auf den Scan und gibt seine Ausgabe im Terminal aus. Mit `-PassThru` steht außerdem der Exitcode zur Verfügung.
+
+```powershell
+Start-Process .\dist\win-x64\KubScan.WinUI.exe -Wait -NoNewWindow -ArgumentList 'scan','127.0.0.1/32','-csv'
+```
+
 ## Desktop-Tests
 
 ```powershell
