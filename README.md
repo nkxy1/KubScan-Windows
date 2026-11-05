@@ -5,7 +5,7 @@
 <h1 align="center">KubScan für Windows</h1>
 
 <p align="center">Geräte finden, lokale Dienste entdecken und ARP-Anfragen beobachten.</p>
-
+<p align="center">100% VibeCoded with Codex</p>
 <p align="center"><a href="https://github.com/nkxy1/KubScan-Windows/releases/latest"><strong>KubScan.exe herunterladen</strong></a></p>
 
 ## Schnellstart
