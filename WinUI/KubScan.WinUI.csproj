@@ -4,7 +4,7 @@
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <WindowsSdkPackageVersion>10.0.19041.56</WindowsSdkPackageVersion>
     <UseWinUI>true</UseWinUI>
     <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
@@ -16,13 +16,22 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/Kubscan.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Release'">true</PublishReadyToRun>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
     <ProjectReference Include="../KubScan.csproj" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishSingleFile;PublishTrimmed;PublishReadyToRun" />
     <Content Include="../assets/Kubscan.ico" Link="Kubscan.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="KubScan.cmd" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- Keep the SDK's configured initialization steps, but invoke them only for
+       GUI launches. CLI/TUI do not need native WinUI libraries or COM activation. -->
+  <Target Name="DeferWindowsAppRuntimeInitialization" AfterTargets="WindowsAppRuntimeAutoInitializer">
+    <ItemGroup>
+      <Compile Remove="@(Compile)" Condition="'%(Filename)%(Extension)' == 'WindowsAppRuntimeAutoInitializer.cs'" />
+      <Compile Include="../packaging/GuiRuntimeInitialization.cs" />
+    </ItemGroup>
+  </Target>
   <!-- The WinUI build emits these resources beside the executable. The
        unpackaged .NET publish pipeline does not include them automatically. -->
   <Target Name="IncludeWinUIResourcesInPublish" AfterTargets="ComputeFilesToPublish">

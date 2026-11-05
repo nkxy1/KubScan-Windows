@@ -6,6 +6,12 @@ namespace KubScan {
   public static int Main(string[] args) {
    int[] ports=DefaultPorts;
    try {
+#if PORTABLE_GUI
+    if(args.Length==0 && !PortableGui.HasInteractiveParentConsole() && PortableGui.CanLaunch())
+     return PortableGui.Run();
+    PortableGui.ConnectConsole();
+    if(args.Length>0 && args[0]=="--tui") args=args[1..];
+#endif
     // Versionsabfragen benoetigen weder OUI-Datenbank noch Benutzereinstellungen.
     if(args.Length==1 && args[0]=="--version") { Console.WriteLine("KubScan "+App.Version); return 0; }
     string data=Environment.OSVersion.Platform==PlatformID.Win32NT?null:Environment.GetEnvironmentVariable("KUBSCAN_DATA_HOME");
@@ -16,13 +22,13 @@ namespace KubScan {
      if(!File.Exists(localOui)) {
       string temporary=localOui+"."+Guid.NewGuid().ToString("N")+".tmp";
       try {
-       using(var source=typeof(App).Assembly.GetManifestResourceStream("KubScan.oui.csv"))
+       using(var source=App.OpenBundledOui())
        using(var output=File.Create(temporary)) source.CopyTo(output);
        try { File.Move(temporary,localOui); } catch(IOException) { if(!File.Exists(localOui)) throw; }
       } finally { if(File.Exists(temporary)) File.Delete(temporary); }
      }
      App.LoadOui(localOui); App.ConfigureExportDirectory(Path.Combine(data,"exports"));
-    } else App.LoadBundledOui();
+    } else App.PrepareBundledOui();
     App.InitializeSettings();
     args=App.ConfigureStartupArguments(args);
     var remaining=new System.Collections.Generic.List<string>();

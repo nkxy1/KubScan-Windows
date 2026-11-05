@@ -91,7 +91,7 @@ public static partial class App {
    }
   } catch(System.IO.IOException) {} catch(InvalidOperationException) {}
  }
- public const string Version = "v.1.0.82";
+ public const string Version = "v.1.0.91";
  static readonly ConcurrentDictionary<uint,Host> hosts=new ConcurrentDictionary<uint,Host>();
  static CancellationTokenSource cancel;
  static Task scan;
@@ -444,6 +444,7 @@ public static partial class App {
     "# Pfade in einfache Anfuehrungszeichen setzen; enthaltene ' als '' schreiben.\n"+
     "# -OutputPath hat fuer den aktuellen Aufruf Vorrang und wird nicht gespeichert.\n"+
     "export_path: '"+output.Replace("'","''")+"'\n";
+   if(System.IO.File.Exists(settingsPath) && System.IO.File.ReadAllText(settingsPath)==content) return;
    System.IO.File.WriteAllText(temporary,content,new System.Text.UTF8Encoding(false));
    if(System.IO.File.Exists(settingsPath)) System.IO.File.Replace(temporary,settingsPath,null);
    else System.IO.File.Move(temporary,settingsPath);
@@ -704,6 +705,7 @@ public static partial class App {
  }
  static int[] ports;
  static string dialogMessage;
+ static int dialogScroll;
  static string dialogTitle="FEHLER";
  static string scannedSubnet="Noch kein Scan gestartet";
  static bool hasScan;
@@ -1154,7 +1156,12 @@ public static partial class App {
   } catch(System.IO.IOException) {} catch(UnauthorizedAccessException) {}
   return "Nicht verfuegbar (ARP/lokales Netz)";
  }
- static volatile System.Collections.Generic.Dictionary<string,string> oui=new System.Collections.Generic.Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+ // Lazy publishes one complete snapshot even when several scan workers first need it.
+ static Lazy<System.Collections.Generic.Dictionary<string,string>> ouiSource=new Lazy<System.Collections.Generic.Dictionary<string,string>>(()=>new System.Collections.Generic.Dictionary<string,string>(StringComparer.OrdinalIgnoreCase));
+ static System.Collections.Generic.Dictionary<string,string> oui {
+  get { return Volatile.Read(ref ouiSource).Value; }
+  set { Volatile.Write(ref ouiSource,new Lazy<System.Collections.Generic.Dictionary<string,string>>(()=>value)); }
+ }
  public static string OuiPath;
  static Task ouiUpdate;
  static bool ouiPopup;
@@ -1171,13 +1178,22 @@ public static partial class App {
   if(System.IO.File.Exists(OuiPath)) oui=ReadOui(OuiPath);
  }
  public static void LoadBundledOui() {
+  PrepareBundledOui();
+  _=oui;
+ }
+ public static void PrepareBundledOui() {
   string folder=System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"KubScan");
   OuiPath=System.IO.Path.Combine(folder,"oui.csv");
-  if(System.IO.File.Exists(OuiPath)) { oui=ReadOui(OuiPath); return; }
-  using(var stream=typeof(App).Assembly.GetManifestResourceStream("KubScan.oui.csv")) {
-   if(stream==null) throw new System.IO.FileNotFoundException("Embedded OUI database missing.");
-   using(var reader=new System.IO.StreamReader(stream)) oui=ParseOuiLines(ReadLines(reader));
-  }
+  string path=OuiPath;
+  Volatile.Write(ref ouiSource,new Lazy<System.Collections.Generic.Dictionary<string,string>>(()=>ReadBundledOui(path)));
+ }
+ static System.Collections.Generic.Dictionary<string,string> ReadBundledOui(string path) {
+  if(System.IO.File.Exists(path)) return ReadOui(path);
+  using(var reader=new System.IO.StreamReader(OpenBundledOui())) return ParseOuiLines(ReadLines(reader));
+ }
+ internal static System.IO.Stream OpenBundledOui() {
+  return typeof(App).Assembly.GetManifestResourceStream("KubScan.oui.csv")
+   ?? throw new System.IO.FileNotFoundException("Embedded OUI database missing.");
  }
  static System.Collections.Generic.IEnumerable<string> ReadLines(System.IO.TextReader reader) {
   string line; while((line=reader.ReadLine())!=null) yield return line;
@@ -1291,11 +1307,11 @@ public static partial class App {
  }
  // Ordnet MAC-Praefixe lokal zu und kennzeichnet private, Multicast- oder unbekannte Adressen.
  static string Vendor(string mac) {
-  var database=oui;
   string key=mac.Replace(":","").Replace("-","");
   if(key.Length!=12 || key.Any(c=>!Uri.IsHexDigit(c))) return "Nicht verfuegbar";
   byte first=Convert.ToByte(key.Substring(0,2),16);
   if((first&3)!=0) return "Lokal/privat oder Multicast";
+  var database=oui;
   string name;
   return database.TryGetValue(key.Substring(0,6),out name)?name:database.Count==0?"OUI-Datei fehlt":"Unbekannt";
  }
@@ -2428,6 +2444,7 @@ public static partial class App {
  }
  // Stellt die lokalisierten Bedienhinweise fuer den Hilfedialog zusammen.
  static void ShowHelp() {
+  dialogScroll=0;
   dialogTitle="Kubscan - Info";
   var common=new[]{
    "F1          Funktionsuebersicht anzeigen",
@@ -2615,19 +2632,24 @@ public static partial class App {
    Console.SetCursorPosition(x,y+4+themes.Length); Console.Write("\u2514"+new string('\u2500',inner)+"\u2518");
   } finally { ThemeForeground=foreground; ThemeBackground=background; }
  }
+ static int DialogPageSize(int height) => Math.Max(1,height-6);
  static void DrawDialog(int width,int height) {
   if(themePicker) { DrawThemePicker(width,height); return; }
-  if(dialogMessage==null) return;
+  if(dialogMessage==null || height<7 || width<8) return;
   string[] body=dialogMessage.Split('\n').Select(TranslateMessage).ToArray();
-  int boxWidth=Math.Min(width-4,Math.Max(themePicker?58:48,body.Max(line=>line.Length)+6)),boxHeight=body.Length+6;
+  int visible=Math.Min(body.Length,DialogPageSize(height));
+  dialogScroll=Math.Clamp(dialogScroll,0,body.Length-visible);
+  string footer=visible<body.Length
+   ? (English?" Up/Down, PgUp/PgDn: Scroll | Enter/Esc: Close":" Hoch/Runter, Bild auf/ab: Scrollen | Enter/Esc: Schliessen")
+   : " [ OK ]  Enter / Esc";
+  int boxWidth=Math.Min(width-4,Math.Max(Math.Max(48,footer.Length+2),body.Max(line=>line.Length)+6)),boxHeight=visible+6;
   int x=(width-boxWidth)/2,y=(height-boxHeight)/2;
   string border="\u250c"+new string('\u2500',boxWidth-2)+"\u2510";
   string bottom="\u2514"+new string('\u2500',boxWidth-2)+"\u2518";
   var lines=new System.Collections.Generic.List<string>();
   lines.Add(border); lines.Add("\u2502"+Cell(" "+T(dialogTitle),boxWidth-2)+"\u2502"); lines.Add("\u2502"+new string(' ',boxWidth-2)+"\u2502");
-  foreach(string line in body) lines.Add("\u2502"+Cell(" "+line,boxWidth-2)+"\u2502");
+  for(int i=0;i<visible;i++) lines.Add("\u2502"+Cell(" "+body[dialogScroll+i],boxWidth-2)+"\u2502");
   lines.Add("\u2502"+new string(' ',boxWidth-2)+"\u2502");
-  string footer=themePicker?(English?" Up/Down: Select | Enter: Apply | Esc: Cancel":" Hoch/Runter: Auswahl | Enter: OK | Esc: Abbruch"):" [ OK ]  Enter / Esc";
   lines.Add("\u2502"+Cell(footer,boxWidth-2)+"\u2502"); lines.Add(bottom);
   ConsoleColor foreground=ThemeForeground,background=ThemeBackground;
   try {
@@ -4028,8 +4050,16 @@ public static partial class App {
       break;
      }
      if(dialogMessage!=null) {
-      if(k.Key==ConsoleKey.Enter || k.Key==ConsoleKey.Escape) { CloseOsDetection(); dialogMessage=null; }
-      else if(osSession!=null && (k.Key==ConsoleKey.UpArrow || k.Key==ConsoleKey.DownArrow || k.Key==ConsoleKey.PageUp || k.Key==ConsoleKey.PageDown)) osSession.Scroll+=(k.Key==ConsoleKey.UpArrow?-1:k.Key==ConsoleKey.DownArrow?1:k.Key==ConsoleKey.PageUp?-5:5);
+      if(k.Key==ConsoleKey.Enter || k.Key==ConsoleKey.Escape) { CloseOsDetection(); dialogMessage=null; dialogScroll=0; }
+      else if(k.Key==ConsoleKey.UpArrow || k.Key==ConsoleKey.DownArrow || k.Key==ConsoleKey.PageUp || k.Key==ConsoleKey.PageDown) {
+       int page=osSession!=null?5:DialogPageSize(Console.WindowHeight);
+       int delta=k.Key==ConsoleKey.UpArrow?-1:k.Key==ConsoleKey.DownArrow?1:k.Key==ConsoleKey.PageUp?-page:page;
+       if(osSession!=null) osSession.Scroll+=delta;
+       else dialogScroll+=delta;
+       renderedModal=null;
+       renderedArpOverlay=null;
+       break;
+      }
       else if(k.Key==ConsoleKey.F10) exit=true;
       continue;
      }
@@ -4096,7 +4126,7 @@ public static partial class App {
   // Also exercise reflection-loaded JSON dependencies inside the published bundle.
   var jsonCheck=ParsePktAdapterIdentities("[{\"Components\":[{\"Id\":17,\"Properties\":[{\"Name\":\"MAC-Adresse\",\"Value\":\"00-11-22-33-44-55\"}]}]}]");
   if(!jsonCheck.ContainsKey(17) || jsonCheck[17].Macs[0]!="00:11:22:33:44:55") throw new Exception("PktMon JSON dependencies or parsing unavailable.");
-  if(typeof(App).Assembly.GetManifestResourceNames().Contains("KubScan.oui.csv") && oui.Count<1000) throw new Exception("Embedded OUI database not loaded.");
+  if(oui.Count<1000) throw new Exception("Embedded OUI database not loaded.");
   if(Parse("192.168.1.42/24").Length!=254 || IP(Parse("192.168.1.42/24")[0])!="192.168.1.1" || IP(Parse("192.168.1.42/24").Last())!="192.168.1.254") throw new Exception("/24");
   if(Parse("10.0.0.0/31").Length!=2 || Parse("127.0.0.1/32").Length!=1 || Parse("10.0.0.0/16").Length!=65534) throw new Exception("Hostbereich");
   foreach(string s in new[]{"abc","300.1.1.1/24","1.2.3/24","10.0.0.1/33","10.0.0.1/8"}) { bool rejected=false; try { Parse(s); } catch(ArgumentException) { rejected=true; } if(!rejected) throw new Exception(s); }

@@ -9,7 +9,7 @@
   <PublishSingleFile Condition="'$(RuntimeIdentifier)' != ''">true</PublishSingleFile>
   <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
   <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
   <DebugType>none</DebugType>
   <ApplicationIcon>assets/Kubscan.ico</ApplicationIcon>
   <NoWarn>SYSLIB0014;CA1416</NoWarn>
@@ -25,5 +25,13 @@
   <Compile Include="KubScan.Desktop.cs" />
   <Compile Include="Launcher.cs" />
   <EmbeddedResource Include="oui.csv" LogicalName="KubScan.oui.csv" />
+ </ItemGroup>
+ <PropertyGroup Condition="'$(PortableGuiArchive)' != '' and '$(RuntimeIdentifier)' == 'win-x64'">
+  <ApplicationManifest>WinUI/app.manifest</ApplicationManifest>
+  <DefineConstants>$(DefineConstants);PORTABLE_GUI</DefineConstants>
+ </PropertyGroup>
+ <ItemGroup Condition="'$(PortableGuiArchive)' != '' and '$(RuntimeIdentifier)' == 'win-x64'">
+  <Compile Include="packaging/PortableGui.cs" />
+  <EmbeddedResource Include="$(PortableGuiArchive)" LogicalName="KubScan.WinUI.zip" />
  </ItemGroup>
 </Project>

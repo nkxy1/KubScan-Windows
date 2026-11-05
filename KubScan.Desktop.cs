@@ -23,13 +23,15 @@ public static partial class App
         public sealed record Palette(string Name, int Background, int Panel, int Text, int Accent);
         public sealed record ToolStatus(string Text, bool Running, int Done = 0, int Total = 0);
         private static string scanError;
+        private static Row[] cachedIpRows;
+        private static (Task Scan, Task Oui, string Filter, int Column, bool Descending, bool English, bool Continuous) cachedIpKey;
 
-        public static async Task InitializeAsync()
+        public static Task InitializeAsync() => Task.Run(() =>
         {
             ports = Launcher.DefaultPorts;
             InitializeSettings();
-            await Task.Run(LoadBundledOui);
-        }
+            PrepareBundledOui();
+        });
 
         public static string DefaultTarget() => DefaultSubnet();
         public static string[] Prefixes(string address)
@@ -114,12 +116,20 @@ public static partial class App
             if (mode == Mode.Ip)
             {
                 sortColumn = Math.Clamp(column, 0, 3);
+                var key = (scan, ouiUpdate, searchText, sortColumn, descending, English, continuousList);
+                bool stable = (scan == null || scan.IsCompleted) && (ouiUpdate == null || ouiUpdate.IsCompleted);
+                if (stable && cachedIpRows != null && cachedIpKey == key) return cachedIpRows;
+                cachedIpRows = null;
                 var sorted = SortHosts(false);
                 if (descending) Array.Reverse(sorted);
-                return sorted.Select(h => new Row(h.IP, new[]
+                var result = sorted.Select(h => new Row(h.IP, new[]
                 {
                     h.IP, DisplayHostName(h), DisplayStatus(h.MAC), DisplayStatus(h.Vendor)
                 }, continuousList ? h.PresenceChange : 0)).ToArray();
+                // Completed scans are immutable for these columns until another
+                // scan/OUI update starts. Avoid sorting and allocating on every UI tick.
+                if (stable) { cachedIpKey = key; cachedIpRows = result; }
+                return result;
             }
             if (mode == Mode.Mdns)
             {

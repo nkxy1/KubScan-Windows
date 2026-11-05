@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window
     private readonly bool[] descending = new bool[3];
     private readonly object[] selections = new object[3];
     private readonly ResultCollection rows = new();
+    private Backend.Row[] renderedSnapshot;
     private List<TargetHistoryEntry> targetHistory = [];
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private Backend.Mode mode;
@@ -48,8 +49,8 @@ public sealed partial class MainWindow : Window
     {
         global::KubScan.App.English = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName != "de";
         InitializeComponent();
-        Title = "KubScan";
-        VersionLabel.Text = global::KubScan.App.Version;
+        Title = "KubScan " + global::KubScan.App.Version;
+        AppTitleBar.Title = Title;
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Kubscan.ico"));
         SystemBackdrop = new MicaBackdrop();
         if (AppWindowTitleBar.IsCustomizationSupported())
@@ -103,8 +104,9 @@ public sealed partial class MainWindow : Window
         Status.Text = L("KubScan wird geladen …", "Loading KubScan …");
         try
         {
-            await Backend.InitializeAsync();
-            Target.Text = await Task.Run(Backend.DefaultTarget);
+            var defaultTarget = Task.Run(Backend.DefaultTarget);
+            await Task.WhenAll(Backend.InitializeAsync(), defaultTarget);
+            Target.Text = defaultTarget.Result;
         }
         catch (Exception error) { notice = error.Message; }
         if (closing) return;
@@ -674,7 +676,8 @@ public sealed partial class MainWindow : Window
         try
         {
             // Update existing row containers in place when only metadata changes.
-            if (rows.Count == snapshot.Length && rows.Select((r, i) => Equals(r.Row.Key, snapshot[i].Key)).All(equal => equal))
+            if (ReferenceEquals(snapshot, renderedSnapshot)) { }
+            else if (rows.Count == snapshot.Length && rows.Select((r, i) => Equals(r.Row.Key, snapshot[i].Key)).All(equal => equal))
             {
                 for (int i = 0; i < snapshot.Length; i++) rows[i].Update(snapshot[i]);
             }
@@ -695,6 +698,7 @@ public sealed partial class MainWindow : Window
                 }
                 else rows.Replace(next);
             }
+            renderedSnapshot = snapshot;
             if (Results.SelectedItem is not ResultItem current || !Equals(current.Row.Key, key))
                 Results.SelectedItem = key == null ? null : rows.FirstOrDefault(r => Equals(r.Row.Key, key));
         }

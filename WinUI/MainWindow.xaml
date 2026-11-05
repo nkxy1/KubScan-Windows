@@ -270,8 +270,6 @@
                         <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="Status" Margin="1,0,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
-                    <TextBlock x:Name="VersionLabel" Grid.Column="1" VerticalAlignment="Bottom"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                 </Grid>
             </StackPanel>
         </Grid>
