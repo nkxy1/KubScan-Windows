@@ -1,94 +1,76 @@
-# KubScan für Windows
+<p align="center">
+  <img src="assets/Kubscan.png" width="108" alt="KubScan-Programmsymbol">
+</p>
 
-KubScan ist eine WinUI-3-Anwendung für IPv4-Scans, die Suche nach lokalen mDNS-Diensten und den Mitschnitt von ARP-Anfragen. Die Programmversion steht in `App.Version` in `KubScan.cs`. Die Hilfe im Programm öffnet sich mit F1.
+<h1 align="center">KubScan für Windows</h1>
 
-## Build und Veröffentlichung
+<p align="center">Geräte finden, lokale Dienste entdecken und ARP-Anfragen beobachten.</p>
 
-Voraussetzungen sind Windows x64, das .NET SDK 10 und beim ersten Build Zugriff auf NuGet. Das Projekt verwendet Windows App SDK 2.6.5. Die OUI-Datenbank zur Herstellererkennung ist im Quellcode-Repository enthalten und wird eingebettet.
+<p align="center"><a href="https://github.com/nkxy1/KubScan-Windows/releases/latest"><strong>KubScan.exe herunterladen</strong></a></p>
 
-Im Repository-Ordner ausführen:
+## Schnellstart
 
-```powershell
-dotnet publish .\WinUI\KubScan.WinUI.csproj -c Release -o .\dist\win-x64
-```
+1. Lade die portable `KubScan.exe` aus dem aktuellen Release herunter.
+2. Öffne die EXE per Doppelklick für die **grafische Oberfläche**. Aus PowerShell oder CMD startet sie ohne Argumente oder mit `--tui` als **Terminaloberfläche** im selben Fenster.
+3. Wähle **IP** und gib den Bereich deines Netzes ein, etwa `192.168.1.0/24`. Starte mit **Enter** oder **F2**. In der GUI kannst du auch auf den Startknopf klicken.
 
-Danach `dist\win-x64\KubScan.WinUI.exe` starten. Den gesamten Ausgabeordner zusammenhalten, da er auch die .NET- und Windows-App-SDK-Laufzeiten enthält. Sollte das Manifestwerkzeug den Netzwerkpfad ablehnen, den Build aus einer lokalen Arbeitskopie starten.
+## Grafische Oberfläche
 
-## WinUI, Terminal und Kommandozeile starten
+![KubScan-GUI mit IP-Bereich, Moduswahl und Detailbereich](assets/screenshots/gui.jpg)
 
-Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Mit `--tui` läuft die bisherige Terminaloberfläche in derselben Terminalsitzung. Die Shell wartet, bis du KubScan mit F10 beendest. Für automatische Scans stehen die bisherigen Kommandozeilenargumente zur Verfügung.
+### IP-Geräte finden
 
-```powershell
-.\dist\win-x64\KubScan.WinUI.exe
-.\dist\win-x64\KubScan.WinUI.exe --tui
-.\dist\win-x64\KubScan.WinUI.exe --tui -Subnet 192.168.1.0/24
-.\dist\win-x64\KubScan.WinUI.exe scan 127.0.0.1/32 -csv
-```
+Du kannst ein Subnetz wie `192.168.1.0/24`, einen Bereich wie `192.168.1.10-25` oder eine einzelne IPv4-Adresse eingeben. Bei einer einzelnen Adresse fragt die GUI nach der Netzmaske. Wähle `/32`, wenn du nur dieses eine Gerät prüfen willst. Über den Pfeil am Eingabefeld öffnest du den Verlauf der zuletzt oder häufig verwendeten Bereiche.
 
-Ab Windows 11 24H2 oder Windows Server 2025 startet die EXE aus dem Explorer ohne zusätzliches Konsolenfenster. Ältere Windows-Versionen können beim Explorer-Start eine Konsole öffnen.
+Die Ergebnisliste zeigt IP-Adresse, ermittelten Namen, MAC-Adresse und Hersteller, soweit verfügbar. Aktiviere für regelmäßige Wiederholungen den **Dauerscan** über den Kreispfeil oder **F3** und starte den Scan. KubScan markiert Änderungen, etwa neu gefundene oder ausgefallene Geräte. Mit **F9** stoppst du den laufenden Scan.
 
-## Desktop-Tests
+### mDNS-Dienste entdecken
 
-```powershell
-dotnet run --project .\tests\Desktop\Desktop.csproj -c Release
-```
+Wähle **mDNS**, um lokal angekündigte Dienste zu finden. KubScan zeigt Dienstname, Typ, Host, Adresse und Port, soweit der Dienst diese meldet. Wähle einen Eintrag, um seine Details zu sehen. **F2** startet die Suche erneut oder stoppt sie, falls sie bereits läuft.
 
-Für den ARP-Mitschnitt sind Administratorrechte und eine Windows-Version mit aktueller PktMon-Streaming-API erforderlich.
+### ARP-Anfragen beobachten
 
-## Portable Windows-EXE
+Starte KubScan für diesen Modus **als Administrator**. Wähle **ARP** und den gewünschten Netzwerkadapter oder **Alle Adapter**. Die Tabelle zeigt beobachtete Anfragen mit Zeit, Adapter, Absender-IP, Absender-MAC und Ziel-IP. Mit **F2** startest oder stoppst du den Mitschnitt. Über **⋯ → Mitschnitt zurücksetzen** beginnst du mit einer leeren Liste. Der Mitschnitt benötigt eine Windows-Version mit PktMon-Streaming.
 
-```powershell
-.\packaging\Publish-Portable.ps1
-```
+### Ergebnisse ansehen, prüfen und speichern
 
-Die Datei `dist/portable-win-x64/KubScan.exe` enthält die x64-Laufzeit,
-die OUI-Datenbank und die WinUI-Oberfläche. Zum Weitergeben genügt diese Datei.
-Beim ersten GUI-Start entpackt KubScan die WinUI-Dateien nach
-`%LOCALAPPDATA%\KubScan\Portable` und verwendet sie bei weiteren Starts wieder.
+- **Filtern und sortieren.** Die Lupe oder **F7** öffnet die Suche. Ein Klick auf einen Spaltenkopf sortiert die Liste, ein weiterer kehrt die Reihenfolge um.
+- **Details und Kopieren.** Wähle eine Ergebniszeile, um ihre Details zu sehen. Über den Pfeil im Detailbereich verschiebst du ihn nach rechts oder unter die Tabelle. Ein Rechtsklick auf eine Zelle bietet **Kopieren**.
+- **Ports prüfen.** Rechtsklick auf ein IP-Ergebnis öffnet den vollständigen TCP-Portscan, den manuellen TCP-Portscan oder den UDP-Portscan. Bei manueller Auswahl sind Listen und Bereiche wie `22,80,443,8000-8010` möglich.
+- **Verfügbarkeit und Betriebssystem prüfen.** **Dauerping** zeigt wiederholte Antworten und Laufzeiten eines Geräts. **Betriebssystem vermuten** liefert eine Einschätzung anhand verfügbarer Hinweise. Erkannte Verbindungen wie SSH, RDP oder Weboberflächen lassen sich aus dem Kontextmenü öffnen.
+- **Exportieren.** Über das Download-Symbol speicherst du IP- und mDNS-Ergebnisse als CSV oder Textdatei.
+- **Hilfe und Einstellungen.** **F1** öffnet die Hilfe. Unter **⋯** wechselst du Sprache und Design. In der IP-Ansicht kannst du dort die OUI-Datenbank für die Zuordnung von MAC-Präfixen zu Herstellern aktualisieren.
 
-Beim Aufruf aus einem interaktiven Terminal öffnet sich ohne Argumente die TUI.
-Mit `--tui` lässt sie sich explizit auswählen. KubScan nutzt dieselbe Konsole,
-und PowerShell bzw. CMD wartet bis zum Beenden der TUI mit F10. Scanargumente
-gehen direkt an die Kommandozeile.
+## Terminaloberfläche (TUI)
 
-Ein Doppelklick im Explorer öffnet WinUI ab Windows-Build 17763
-(Windows Server 2019 mit Desktopdarstellung). Ab Windows 11 24H2 bzw.
-Windows Server 2025 startet die GUI ohne Konsolenfenster. Auf älteren Systemen
-kann Windows kurz eine Konsole öffnen, die KubScan vor dem Laden der GUI freigibt.
-Windows Server 2016 und Server Core verwenden die Terminaloberfläche.
-Der ARP-Mitschnitt setzt weiterhin eine Windows-Version mit PktMon-Streaming voraus.
-
-## Startperformance
-
-Release-Veröffentlichungen der GUI verwenden ReadyToRun, damit weniger Code beim Start
-JIT-kompiliert werden muss. CLI und TUI initialisieren die native Windows-App-Laufzeit
-nicht. Die OUI-Datenbank wird erst bei der ersten Herstellerabfrage eines geeigneten
-MAC-Präfixes geladen; parallele Abfragen teilen sich denselben vollständig geladenen
-Datenbestand. OUI-Updates ersetzen ihn weiterhin atomar. Die GUI bereitet Einstellungen
-und Netzwerkvorbelegung parallel im Hintergrund vor. Unveränderte Einstellungen werden
-beim Start nicht erneut geschrieben. Portable Builds komprimieren das WinUI-Paket.
-Die portable EXE nutzt zusätzlich die Bundle-Kompression für die eingebettete
-.NET-Laufzeit und den Programmcode.
-Nach abgeschlossenen IP-Scans verwendet die GUI unveränderte Ergebnislisten wieder,
-statt sie bei jedem Timer-Tick neu zu sortieren und aufzubauen. Neue Scans,
-OUI-Updates, Filter, Sortierung und Sprachwechsel werden dabei berücksichtigt.
-
-Startmessungen für zwei veröffentlichte Versionen lassen sich mit demselben Skript
-wiederholen:
+![KubScan-TUI mit Beispielnetz, CIDR-Referenz und Funktionstasten](assets/screenshots/tui.png)
 
 ```powershell
-.\tests\Measure-Startup.ps1 -Executable .\dist\win-x64\KubScan.WinUI.exe
+.\KubScan.exe --tui
 ```
 
-`FirstOutputMs` misst die Zeit bis zur ersten Konsolenausgabe, `TotalMs` zusätzlich
-den vollständigen Loopbackscan und das Prozessende. Den ersten Lauf getrennt von
-Folgeläufen beurteilen; das Skript leert keine Betriebssystem-Caches. Für vergleichbare
-Ergebnisse denselben Startort verwenden. Beim Start von einer Netzwerkfreigabe fallen
-zusätzlich Zugriffe für .NET- und WinUI-Bibliotheken an; bei Bedarf den gesamten
-Veröffentlichungsordner auf eine lokale Festplatte kopieren.
+Gib das Subnetz oder den IP-Bereich oben ein. Die Menüleiste am unteren Rand zeigt die Aktionen des aktuellen Modus. Pfeil auf/ab wählt einen Treffer, Pfeil links/rechts die Sortierspalte. Bild auf/ab springt seitenweise. Mit **Leertaste** öffnest du Details, mit **C** kopierst du den Wert der gewählten Spalte in der IP- oder mDNS-Liste.
 
-Messung vom 05.11.2026 auf derselben Windows-Maschine und Netzwerkfreigabe:
-Median von vier Folgeläufen nach jeweils einem ersten Lauf, v.1.0.82 gegen v.1.0.83.
-Beim oben verwendeten Loopbackscan sank die Zeit bis zur ersten Ausgabe von
-256,6 auf 184,5 ms (28 %); einschließlich Scan und Prozessende von 642,1 auf
-560,2 ms (13 %). Das sind CLI-Messungen, keine garantierten GUI- oder Kaltstartzeiten.
+| Taste | Aktion |
+| --- | --- |
+| **F1** | Hilfe zum aktuellen Modus öffnen. In kleinen Fenstern mit den Pfeiltasten oder Bild auf/ab scrollen. |
+| **F2** | IP-Scan starten, mDNS neu suchen oder den ARP-Mitschnitt starten bzw. fortsetzen. |
+| **F3** | In der IP-Ansicht den Dauerscan starten oder stoppen. In ARP einen neuen Mitschnitt beginnen. |
+| **F4** | In der IP-Ansicht den Dauerping für den gewählten Host öffnen. In ARP den Netzwerkadapter auswählen. |
+| **F5 / F6** | IP-Ergebnisse als CSV oder TXT exportieren. |
+| **F7** | In der aktuellen Ansicht suchen. **Enter** übernimmt den Filter. |
+| **F8** | In der IP-Ansicht die OUI-Herstellerdatenbank aktualisieren. |
+| **F9 / Esc** | Laufende Aktion stoppen. **Esc** schließt zunächst offene Details oder löscht den aktiven Filter. |
+| **M / A** | Zwischen IP und mDNS bzw. zwischen IP und ARP wechseln. |
+| **S / P / U / O** | Vollständiger TCP-Scan, manueller TCP-Scan, UDP-Scan oder Betriebssystem-Vermutung für den gewählten IP-Host. |
+| **T / L** | Farbschema auswählen oder Deutsch und Englisch umschalten. |
+| **F10** | KubScan beenden und zum Shell-Prompt zurückkehren. |
+
+## Automatische Scans
+
+Mit `scan` kannst du KubScan aus Skripten aufrufen. Ohne Exportoption werden die Ergebnisse im Terminal ausgegeben. `-csv` und `-txt` schreiben Dateien. Mit `-OutputPath` bestimmst du den Zielordner und mit `-Ports` die zu prüfenden TCP-Ports.
+
+```powershell
+.\KubScan.exe scan 127.0.0.1/32
+.\KubScan.exe scan 192.168.1.0/24 -csv -txt -OutputPath .\Scanberichte -Ports "22,80,443"
+```
