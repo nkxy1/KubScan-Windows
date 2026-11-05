@@ -1,74 +1,76 @@
 <p align="center">
-  <img src="assets/Kubscan.png" width="108" alt="KubScan-Programmsymbol">
+  <img src="assets/Kubscan.png" width="108" alt="KubScan application icon">
 </p>
 
-<h1 align="center">KubScan für Windows</h1>
-
-<p align="center">Geräte finden, lokale Dienste entdecken und ARP-Anfragen beobachten.</p>
+<h1 align="center">KubScan for Windows</h1>
+<p align="center">Find devices, discover local services, and monitor ARP requests.</p>
 <p align="center">100% VibeCoded with Codex</p>
-<p align="center"><a href="https://github.com/nkxy1/KubScan-Windows/releases/latest"><strong>KubScan.exe herunterladen</strong></a></p>
 
-## Schnellstart
+<p align="center"><strong>English</strong> · <a href="README.de.md">Deutsch</a></p>
 
-1. Lade die portable `KubScan.exe` aus dem aktuellen Release herunter.
-2. Öffne die EXE per Doppelklick für die **grafische Oberfläche**. Aus PowerShell oder CMD startet sie ohne Argumente oder mit `--tui` als **Terminaloberfläche** im selben Fenster.
-3. Wähle **IP** und gib den Bereich deines Netzes ein, etwa `192.168.1.0/24`. Starte mit **Enter** oder **F2**. In der GUI kannst du auch auf den Startknopf klicken.
+<p align="center"><a href="https://github.com/nkxy1/KubScan-Windows/releases/latest"><strong>Download KubScan.exe</strong></a></p>
 
-## Grafische Oberfläche
+## Quick start
 
-![KubScan-GUI mit IP-Bereich, Moduswahl und Detailbereich](assets/screenshots/gui.jpg)
+1. Download the portable `KubScan.exe` from the latest release.
+2. Double-click the EXE to open the **graphical interface**. From PowerShell or Command Prompt, run it without arguments or with `--tui` to open the **terminal interface** in the same window.
+3. Select **IP** and enter your network range, such as `192.168.1.0/24`. Press **Enter** or **F2** to start. In the GUI, you can also click the start button.
 
-### IP-Geräte finden
+## Graphical interface
 
-Du kannst ein Subnetz wie `192.168.1.0/24`, einen Bereich wie `192.168.1.10-25` oder eine einzelne IPv4-Adresse eingeben. Bei einer einzelnen Adresse fragt die GUI nach der Netzmaske. Wähle `/32`, wenn du nur dieses eine Gerät prüfen willst. Über den Pfeil am Eingabefeld öffnest du den Verlauf der zuletzt oder häufig verwendeten Bereiche.
+![KubScan GUI showing the IP range, mode selector, and details pane](assets/screenshots/gui.jpg)
 
-Die Ergebnisliste zeigt IP-Adresse, ermittelten Namen, MAC-Adresse und Hersteller, soweit verfügbar. Aktiviere für regelmäßige Wiederholungen den **Dauerscan** über den Kreispfeil oder **F3** und starte den Scan. KubScan markiert Änderungen, etwa neu gefundene oder ausgefallene Geräte. Mit **F9** stoppst du den laufenden Scan.
+### Find devices by IP
 
-### mDNS-Dienste entdecken
+Enter a subnet such as `192.168.1.0/24`, a range such as `192.168.1.10-25`, or a single IPv4 address. If you enter a single address, the GUI asks for a subnet mask. Choose `/32` to check just that device. Use the arrow next to the input field to see recently or frequently used ranges.
 
-Wähle **mDNS**, um lokal angekündigte Dienste zu finden. KubScan zeigt Dienstname, Typ, Host, Adresse und Port, soweit der Dienst diese meldet. Wähle einen Eintrag, um seine Details zu sehen. **F2** startet die Suche erneut oder stoppt sie, falls sie bereits läuft.
+The results show each device's IP address, resolved name, MAC address, and vendor when available. To scan repeatedly, enable continuous scanning with the circular arrow or **F3**, then start the scan. KubScan highlights changes such as devices that appear or stop responding. Press **F9** to stop the scan.
 
-### ARP-Anfragen beobachten
+### Discover mDNS services
 
-Starte KubScan für diesen Modus **als Administrator**. Wähle **ARP** und den gewünschten Netzwerkadapter oder **Alle Adapter**. Die Tabelle zeigt beobachtete Anfragen mit Zeit, Adapter, Absender-IP, Absender-MAC und Ziel-IP. Mit **F2** startest oder stoppst du den Mitschnitt. Über **⋯ → Mitschnitt zurücksetzen** beginnst du mit einer leeren Liste. Der Mitschnitt benötigt eine Windows-Version mit PktMon-Streaming.
+Select **mDNS** to find services advertised on the local network. KubScan shows the service name, type, host, address, and port when the service provides them. Select an entry to see its details. Press **F2** to run the search again or stop it while it is running.
 
-### Ergebnisse ansehen, prüfen und speichern
+### Monitor ARP requests
 
-- **Filtern und sortieren.** Die Lupe oder **F7** öffnet die Suche. Ein Klick auf einen Spaltenkopf sortiert die Liste, ein weiterer kehrt die Reihenfolge um.
-- **Details und Kopieren.** Wähle eine Ergebniszeile, um ihre Details zu sehen. Über den Pfeil im Detailbereich verschiebst du ihn nach rechts oder unter die Tabelle. Ein Rechtsklick auf eine Zelle bietet **Kopieren**.
-- **Ports prüfen.** Rechtsklick auf ein IP-Ergebnis öffnet den vollständigen TCP-Portscan, den manuellen TCP-Portscan oder den UDP-Portscan. Bei manueller Auswahl sind Listen und Bereiche wie `22,80,443,8000-8010` möglich.
-- **Verfügbarkeit und Betriebssystem prüfen.** **Dauerping** zeigt wiederholte Antworten und Laufzeiten eines Geräts. **Betriebssystem vermuten** liefert eine Einschätzung anhand verfügbarer Hinweise. Erkannte Verbindungen wie SSH, RDP oder Weboberflächen lassen sich aus dem Kontextmenü öffnen.
-- **Exportieren.** Über das Download-Symbol speicherst du IP- und mDNS-Ergebnisse als CSV oder Textdatei.
-- **Hilfe und Einstellungen.** **F1** öffnet die Hilfe. Unter **⋯** wechselst du Sprache und Design. In der IP-Ansicht kannst du dort die OUI-Datenbank für die Zuordnung von MAC-Präfixen zu Herstellern aktualisieren.
+Run KubScan **as administrator** for this mode. Select **ARP**, then choose a network adapter or capture on all adapters. The table shows the time, adapter, sender IP, sender MAC, and target IP for each observed request. Press **F2** to start or stop capturing. Use the reset option under **⋯** to clear the list and start fresh. Capture requires a version of Windows with PktMon streaming support.
 
-## Terminaloberfläche (TUI)
+### View, check, and save results
 
-![KubScan-TUI mit Beispielnetz, CIDR-Referenz und Funktionstasten](assets/screenshots/tui.png)
+- **Filter and sort.** Click the magnifying glass or press **F7** to open the search. Click a column header to sort the list, then click it again to reverse the order.
+- **View details and copy values.** Select a result to see its details. Use the arrow in the details pane to move it to the right of or below the table. Right-click a cell to copy its value.
+- **Check ports.** Right-click an IP result to run a full TCP port scan, a manual TCP port scan, or a UDP port scan. Manual port selection accepts lists and ranges such as `22,80,443,8000-8010`.
+- **Check availability and estimate the operating system.** Continuous ping shows repeated replies and response times. OS detection estimates the operating system from the available clues. Use the context menu to open detected connections such as SSH, RDP, or web interfaces.
+- **Export results.** Use the download icon to save IP and mDNS results as CSV or plain text.
+- **Open help and change settings.** Press **F1** for help. Use **⋯** to change the language or theme. In IP mode, the same menu lets you update the OUI database that maps MAC address prefixes to vendors.
+
+## Terminal interface (TUI)
+
+![KubScan TUI showing an example network, CIDR reference, and function keys](assets/screenshots/tui.png)
 
 ```powershell
 .\KubScan.exe --tui
 ```
 
-Gib das Subnetz oder den IP-Bereich oben ein. Die Menüleiste am unteren Rand zeigt die Aktionen des aktuellen Modus. Pfeil auf/ab wählt einen Treffer, Pfeil links/rechts die Sortierspalte. Bild auf/ab springt seitenweise. Mit **Leertaste** öffnest du Details, mit **C** kopierst du den Wert der gewählten Spalte in der IP- oder mDNS-Liste.
+Enter a subnet or IP range at the top. The menu bar at the bottom shows the actions for the current mode. Use Up and Down to select a result and Left and Right to choose the sort column. Page Up and Page Down move one page at a time. Press **Space** to open details or **C** to copy the value in the selected column of the IP or mDNS list.
 
-| Taste | Aktion |
+| Key | Action |
 | --- | --- |
-| **F1** | Hilfe zum aktuellen Modus öffnen. In kleinen Fenstern mit den Pfeiltasten oder Bild auf/ab scrollen. |
-| **F2** | IP-Scan starten, mDNS neu suchen oder den ARP-Mitschnitt starten bzw. fortsetzen. |
-| **F3** | In der IP-Ansicht den Dauerscan starten oder stoppen. In ARP einen neuen Mitschnitt beginnen. |
-| **F4** | In der IP-Ansicht den Dauerping für den gewählten Host öffnen. In ARP den Netzwerkadapter auswählen. |
-| **F5 / F6** | IP-Ergebnisse als CSV oder TXT exportieren. |
-| **F7** | In der aktuellen Ansicht suchen. **Enter** übernimmt den Filter. |
-| **F8** | In der IP-Ansicht die OUI-Herstellerdatenbank aktualisieren. |
-| **F9 / Esc** | Laufende Aktion stoppen. **Esc** schließt zunächst offene Details oder löscht den aktiven Filter. |
-| **M / A** | Zwischen IP und mDNS bzw. zwischen IP und ARP wechseln. |
-| **S / P / U / O** | Vollständiger TCP-Scan, manueller TCP-Scan, UDP-Scan oder Betriebssystem-Vermutung für den gewählten IP-Host. |
-| **T / L** | Farbschema auswählen oder Deutsch und Englisch umschalten. |
-| **F10** | KubScan beenden und zum Shell-Prompt zurückkehren. |
+| **F1** | Open help for the current mode. In small windows, scroll with the arrow keys or Page Up and Page Down. |
+| **F2** | Start an IP scan, repeat mDNS discovery, or start or resume ARP capture. |
+| **F3** | Start or stop continuous scanning in IP mode. Start a new capture in ARP mode. |
+| **F4** | Open continuous ping for the selected host in IP mode. Select a network adapter in ARP mode. |
+| **F5 / F6** | Export IP results as CSV or TXT. |
+| **F7** | Search the current view. Press **Enter** to apply the filter. |
+| **F8** | Update the OUI vendor database in IP mode. |
+| **F9 / Esc** | Stop the current action. **Esc** first closes open details or clears the active filter. |
+| **M / A** | Switch between IP and mDNS, or between IP and ARP, respectively. |
+| **S / P / U / O** | Run a full TCP scan, a manual TCP scan, a UDP scan, or OS detection for the selected IP host, respectively. |
+| **T / L** | Choose a color theme or switch between German and English. |
+| **F10** | Exit KubScan and return to the shell prompt. |
 
-## Automatische Scans
+## Automated scans
 
-Mit `scan` kannst du KubScan aus Skripten aufrufen. Ohne Exportoption werden die Ergebnisse im Terminal ausgegeben. `-csv` und `-txt` schreiben Dateien. Mit `-OutputPath` bestimmst du den Zielordner und mit `-Ports` die zu prüfenden TCP-Ports.
+Use `scan` to run KubScan from scripts. By default, results appear in the terminal. Use `-csv` and `-txt` to write files, `-OutputPath` to set the destination folder, and `-Ports` to specify which TCP ports to check.
 
 ```powershell
 .\KubScan.exe scan 127.0.0.1/32
