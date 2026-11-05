@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+/dist/
+/exports/
+.vs/
+.vscode/
+*.user
+*.suo
+*.tmp
+*.tmp.*
+Thumbs.db
+Desktop.ini

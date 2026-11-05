@@ -1,0 +1,15 @@
+<Project>
+ <!-- Die Anwendung und die per Reflection verwendete PktMon-JSON/XML-Pipeline
+      vollstaendig erhalten. Nur unbenutzte Framework-Bestandteile entfernen. -->
+ <ItemGroup Condition="'$(PublishTrimmed)' == 'true'">
+  <TrimmerRootAssembly Include="$(AssemblyName)" />
+  <TrimmerRootAssembly Include="System.Private.DataContractSerialization" />
+  <TrimmerRootAssembly Include="System.Runtime.Serialization.Json" />
+  <TrimmerRootAssembly Include="System.Runtime.Serialization.Xml" />
+  <TrimmerRootAssembly Include="System.Xml.XmlDocument" />
+  <TrimmerRootAssembly Include="System.Xml.ReaderWriter" />
+  <TrimmerRootAssembly Include="System.Xml.XPath" />
+  <TrimmerRootAssembly Include="System.Private.Xml" />
+  <TrimmerRootAssembly Include="System.Xml.XPath.XDocument" />
+ </ItemGroup>
+</Project>

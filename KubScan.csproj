@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <OutputType>Exe</OutputType>
+  <TargetFramework>net10.0</TargetFramework>
+  <AssemblyName>KubScan</AssemblyName>
+  <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  <ImplicitUsings>disable</ImplicitUsings>
+  <Nullable>disable</Nullable>
+  <PublishSingleFile Condition="'$(RuntimeIdentifier)' != ''">true</PublishSingleFile>
+  <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
+  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  <DebugType>none</DebugType>
+  <ApplicationIcon>assets/Kubscan.ico</ApplicationIcon>
+  <NoWarn>SYSLIB0014;CA1416</NoWarn>
+ </PropertyGroup>
+ <PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(RuntimeIdentifier)' != '' and '$(SelfContained)' == 'true'">
+  <PublishTrimmed Condition="'$(PublishTrimmed)' == ''">true</PublishTrimmed>
+  <TrimMode Condition="'$(TrimMode)' == ''">partial</TrimMode>
+  <PublishReadyToRun Condition="'$(PublishReadyToRun)' == '' and '$(PublishTrimmed)' == 'true'">true</PublishReadyToRun>
+ </PropertyGroup>
+ <Import Project="packaging/TrimmingRoots.targets" />
+ <ItemGroup>
+  <Compile Include="KubScan.cs" />
+  <Compile Include="KubScan.Desktop.cs" />
+  <Compile Include="Launcher.cs" />
+  <EmbeddedResource Include="oui.csv" LogicalName="KubScan.oui.csv" />
+ </ItemGroup>
+</Project>

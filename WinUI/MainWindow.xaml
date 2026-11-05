@@ -1,0 +1,279 @@
+<Window
+    x:Class="KubScan.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:KubScan.WinUI">
+    <Grid x:Name="WindowLayout">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TitleBar x:Name="AppTitleBar" Title="KubScan" Height="48">
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Kubscan.ico"/>
+            </TitleBar.IconSource>
+        </TitleBar>
+
+        <Grid x:Name="Root" Grid.Row="1" Padding="16" RowSpacing="10" KeyboardAcceleratorPlacementMode="Hidden">
+            <Grid.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="KubScanSurfaceBrush" Color="#FFF1F6FB"/>
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#FFBCDDF8"/>
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#FFAED5F5"/>
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#FF9FCBF0"/>
+                            <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#FF173750"/>
+                            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FF173750"/>
+                            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#FF173750"/>
+                            <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="#FFD4E9FA"/>
+                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#FFC9E3F9"/>
+                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="#FFB9DAF5"/>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <SolidColorBrush x:Key="KubScanSurfaceBrush" Color="#FF202020"/>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="HighContrast">
+                            <SolidColorBrush x:Key="KubScanSurfaceBrush" Color="{ThemeResource SystemColorWindowColor}"/>
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                    <Style x:Key="CardStyle" TargetType="Border">
+                        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                    </Style>
+                    <Style x:Key="HeaderStyle" TargetType="Border">
+                        <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}"/>
+                    </Style>
+                    <Style x:Key="ModeStyle" TargetType="ToggleButton">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="CornerRadius" Value="6"/>
+                        <Setter Property="Padding" Value="16,4"/>
+                        <Setter Property="Height" Value="38"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
+                    <Style x:Key="ColumnGripStyle" TargetType="Thumb">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Grid Background="Transparent">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal"/>
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters><Setter Target="ResizeIndicator.Opacity" Value="1"/></VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters><Setter Target="ResizeIndicator.Opacity" Value="1"/></VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Disabled"/>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                        <Border Width="1" Margin="0,8,2,8" HorizontalAlignment="Right"
+                                                Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+                                        <Border x:Name="ResizeIndicator" Width="3" Margin="0,5,1,5" HorizontalAlignment="Right"
+                                                Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="2" Opacity="0"/>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <DataTemplate x:Key="ResultTemplate" x:DataType="local:ResultItem">
+                        <Border MinHeight="32" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
+                            <Grid Background="Transparent" RightTapped="ResultRightTapped">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{x:Bind Columns.StatusWidth, Mode=OneWay}"/>
+                                    <ColumnDefinition Width="{x:Bind Columns.First, Mode=OneWay}"/>
+                                    <ColumnDefinition Width="{x:Bind Columns.Second, Mode=OneWay}"/>
+                                    <ColumnDefinition Width="{x:Bind Columns.Third, Mode=OneWay}"/>
+                                    <ColumnDefinition Width="{x:Bind Columns.Fourth, Mode=OneWay}"/>
+                                    <ColumnDefinition Width="{x:Bind Columns.Fifth, Mode=OneWay}"/>
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Width="11" Height="11" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Visibility="{x:Bind Columns.StatusVisibility, Mode=OneWay}"
+                                         Fill="{x:Bind StatusBrush, Mode=OneWay}"
+                                         AutomationProperties.Name="{x:Bind StatusText, Mode=OneWay}"
+                                         ToolTipService.ToolTip="{x:Bind StatusText, Mode=OneWay}"/>
+                                <TextBlock Grid.Column="1" Text="{x:Bind First, Mode=OneWay}" Margin="8,0,12,0"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{x:Bind Second, Mode=OneWay}" Margin="8,0,12,0"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{x:Bind Third, Mode=OneWay}" Margin="8,0,12,0"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="{x:Bind Fourth, Mode=OneWay}" Margin="8,0,12,0"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="{x:Bind Fifth, Mode=OneWay}" Margin="8,0,12,0"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ResourceDictionary>
+            </Grid.Resources>
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Background" Value="{ThemeResource KubScanSurfaceBrush}"/>
+                </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="Toolbar" ColumnSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border x:Name="ModeSelector" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="8" Padding="3"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <ToggleButton x:Name="IpTab" Content="IP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                        <ToggleButton x:Name="MdnsTab" Content="mDNS" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                        <ToggleButton x:Name="ArpTab" Content="ARP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel x:Name="ScanControls" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <Grid x:Name="TargetField" Width="215" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Grid x:Name="TargetInput" Height="38" CornerRadius="{ThemeResource ControlCornerRadius}"
+                              BorderThickness="1" BorderBrush="{ThemeResource TextControlBorderBrush}"
+                              Background="{ThemeResource TextControlBackground}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="Target" Padding="33,7,4,7" MaxLength="31" BorderThickness="0"
+                                     Background="Transparent" PlaceholderText="Subnet / IP range" KeyDown="TargetKeyDown"
+                                     AutomationProperties.Name="Subnet or IP range" BeforeTextChanging="TargetBeforeTextChanging"/>
+                            <Button x:Name="TargetHistoryButton" Grid.Column="1" Width="32" Margin="0,2,2,2" Padding="0"
+                                    VerticalAlignment="Stretch" Background="Transparent" BorderThickness="0" Click="TargetHistoryClicked">
+                                <FontIcon Glyph="&#xE70D;" FontSize="12"/>
+                            </Button>
+                        </Grid>
+                        <Button x:Name="AdapterButton" Height="38" Padding="34,0,10,0" Visibility="Collapsed"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="ChooseAdapter">
+                            <TextBlock x:Name="AdapterLabel" TextTrimming="CharacterEllipsis"/>
+                        </Button>
+                        <TextBlock x:Name="LocalNetwork" Margin="34,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
+                        <FontIcon Glyph="&#xE774;" FontSize="16" Margin="10,0,0,0" HorizontalAlignment="Left"
+                                  VerticalAlignment="Center" IsHitTestVisible="False" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </Grid>
+                    <Button x:Name="StartButton" Height="38" MinWidth="38" Padding="10,0" VerticalAlignment="Center"
+                            Style="{StaticResource AccentButtonStyle}" Click="StartClicked">
+                        <FontIcon x:Name="StartIcon" Glyph="&#xE768;" FontSize="14"/>
+                    </Button>
+                    <ToggleButton x:Name="ContinuousSwitch" Width="38" Height="38" Padding="0"
+                                  VerticalAlignment="Center" Visibility="Collapsed">
+                        <FontIcon Glyph="&#xE895;" FontSize="16"/>
+                    </ToggleButton>
+                </StackPanel>
+                <StackPanel x:Name="ToolbarActions" Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <StackPanel x:Name="SearchField" Orientation="Horizontal" Spacing="4"
+                                HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="SearchToggle" Width="38" Height="38" Padding="0" Background="Transparent"
+                                BorderThickness="0" Click="SearchToggleClicked" AutomationProperties.Name="Search">
+                            <FontIcon Glyph="&#xE721;" FontSize="16"/>
+                        </Button>
+                        <TextBox x:Name="Search" Width="160" Height="38" Visibility="Collapsed"
+                                 KeyDown="SearchKeyDown" TextChanged="SearchChanged" AutomationProperties.Name="Search results"/>
+                    </StackPanel>
+                    <Button x:Name="ExportButton" Width="38" Height="38" Padding="0" VerticalAlignment="Center"
+                            Background="Transparent" BorderThickness="0" Click="ExportClicked">
+                        <FontIcon Glyph="&#xE896;" FontSize="17"/>
+                    </Button>
+                    <Button x:Name="MoreButton" Width="38" Height="38" Padding="0" VerticalAlignment="Center"
+                            Background="Transparent" BorderThickness="0" AutomationProperties.Name="More actions">
+                        <FontIcon Glyph="&#xE712;" FontSize="17"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="ContentArea" Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="ListRow" Height="*"/>
+                    <RowDefinition x:Name="GripRow" Height="10"/>
+                    <RowDefinition x:Name="DetailRow" Height="152"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="ListColumn" Width="*"/>
+                    <ColumnDefinition x:Name="GripColumn" Width="0"/>
+                    <ColumnDefinition x:Name="DetailColumn" Width="0"/>
+                </Grid.ColumnDefinitions>
+                <Border x:Name="TableCard" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        Style="{StaticResource CardStyle}" CornerRadius="8">
+                    <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ZoomMode="Disabled">
+                        <Grid x:Name="TableSurface" Width="650">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <Border x:Name="HeaderBand" Style="{StaticResource HeaderStyle}"
+                                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                                <Grid x:Name="Headers" Padding="12,0,24,0" MinHeight="32"/>
+                            </Border>
+                            <ListView x:Name="Results" Grid.Row="1" ItemTemplate="{StaticResource ResultTemplate}"
+                                      SelectionChanged="SelectionChanged" AutomationProperties.Name="Results">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="12,0,24,0"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="MinHeight" Value="32"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                        </Grid>
+                    </ScrollViewer>
+                </Border>
+
+                <Thumb x:Name="BelowGrip" Grid.Row="1" IsTabStop="True" DragDelta="DetailDragDelta" KeyDown="DetailGripKeyDown">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Grid Background="Transparent">
+                                <Border Width="32" Height="3" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{ThemeResource ControlStrongStrokeColorDefaultBrush}" CornerRadius="2"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+                <Thumb x:Name="RightGrip" Grid.Column="1" Visibility="Collapsed" IsTabStop="True" DragDelta="DetailDragDelta" KeyDown="DetailGripKeyDown">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Grid Background="Transparent">
+                                <Border Width="3" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{ThemeResource ControlStrongStrokeColorDefaultBrush}" CornerRadius="2"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+
+                <Border x:Name="DetailCard" Grid.Row="2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        Style="{StaticResource CardStyle}" CornerRadius="8" Padding="14,0,0,9">
+                    <Grid RowSpacing="7">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                        <Grid ColumnSpacing="6">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="DetailTitle" Margin="0,0,14,0" Style="{StaticResource SubtitleTextBlockStyle}"
+                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <Button x:Name="DetailPlacement" Grid.Column="1" Width="36" Height="32" Padding="0"
+                                    Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" Click="DetailPlacementClicked">
+                                <FontIcon x:Name="DetailPlacementIcon" Glyph="&#xE72A;" FontSize="12"/>
+                            </Button>
+                        </Grid>
+                        <ScrollViewer x:Name="DetailScroll" Grid.Row="1" Margin="0,0,14,0">
+                            <Grid x:Name="DetailFields" ColumnSpacing="20" RowSpacing="5"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <StackPanel Grid.Row="2" Spacing="5">
+                <ProgressBar x:Name="Progress" Visibility="Collapsed"/>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="Status" Margin="1,0,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                    <TextBlock x:Name="VersionLabel" Grid.Column="1" VerticalAlignment="Bottom"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
