@@ -16,21 +16,16 @@ Danach `dist\win-x64\KubScan.WinUI.exe` starten. Den gesamten Ausgabeordner zusa
 
 ## WinUI, Terminal und Kommandozeile starten
 
-Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Starte die bisherige Terminaloberfläche mit `KubScan.cmd --tui`. Sie verwendet dasselbe Terminal und gibt es bei F10 wieder frei.
+Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Mit `--tui` läuft die bisherige Terminaloberfläche in derselben Terminalsitzung. Die Shell wartet, bis du KubScan mit F10 beendest. Für automatische Scans stehen die bisherigen Kommandozeilenargumente zur Verfügung.
 
 ```powershell
 .\dist\win-x64\KubScan.WinUI.exe
-.\dist\win-x64\KubScan.cmd --tui
-.\dist\win-x64\KubScan.cmd --tui -Subnet 192.168.1.0/24
+.\dist\win-x64\KubScan.WinUI.exe --tui
+.\dist\win-x64\KubScan.WinUI.exe --tui -Subnet 192.168.1.0/24
+.\dist\win-x64\KubScan.WinUI.exe scan 127.0.0.1/32 -csv
 ```
 
-`KubScan.cmd` reicht die Argumente an die EXE weiter und wartet auf deren Ende. Der direkte Aufruf der GUI-EXE kann in einer interaktiven Shell sofort zur Eingabeaufforderung zurückkehren. Verwende für die TUI den Starter oder in PowerShell `Start-Process -Wait -NoNewWindow`, damit die Shell währenddessen keine Eingaben liest.
-
-Für automatische Scans akzeptiert die EXE weiterhin die bisherigen Kommandozeilenargumente. In PowerShell wartet `Start-Process -Wait -NoNewWindow` auf den Scan und gibt seine Ausgabe im Terminal aus. Mit `-PassThru` steht außerdem der Exitcode zur Verfügung.
-
-```powershell
-Start-Process .\dist\win-x64\KubScan.WinUI.exe -Wait -NoNewWindow -ArgumentList 'scan','127.0.0.1/32','-csv'
-```
+Ab Windows 11 24H2 oder Windows Server 2025 startet die EXE aus dem Explorer ohne zusätzliches Konsolenfenster. Ältere Windows-Versionen können beim Explorer-Start eine Konsole öffnen.
 
 ## Desktop-Tests
 
