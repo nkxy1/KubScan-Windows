@@ -91,7 +91,7 @@ public static partial class App {
    }
   } catch(System.IO.IOException) {} catch(InvalidOperationException) {}
  }
- public const string Version = "v.1.0.78";
+ public const string Version = "v.1.0.79";
  static readonly ConcurrentDictionary<uint,Host> hosts=new ConcurrentDictionary<uint,Host>();
  static CancellationTokenSource cancel;
  static Task scan;

@@ -16,13 +16,15 @@ Danach `dist\win-x64\KubScan.WinUI.exe` starten. Den gesamten Ausgabeordner zusa
 
 ## WinUI, Terminal und Kommandozeile starten
 
-Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Mit `--tui` öffnet dieselbe EXE die bisherige Terminaloberfläche in einer eigenen Konsole. Dort beendet F10 das Programm.
+Ohne Parameter öffnet `KubScan.WinUI.exe` die WinUI-Oberfläche. Starte die bisherige Terminaloberfläche mit `KubScan.cmd --tui`. Sie verwendet dasselbe Terminal und gibt es bei F10 wieder frei.
 
 ```powershell
 .\dist\win-x64\KubScan.WinUI.exe
-.\dist\win-x64\KubScan.WinUI.exe --tui
-.\dist\win-x64\KubScan.WinUI.exe --tui -Subnet 192.168.1.0/24
+.\dist\win-x64\KubScan.cmd --tui
+.\dist\win-x64\KubScan.cmd --tui -Subnet 192.168.1.0/24
 ```
+
+`KubScan.cmd` reicht die Argumente an die EXE weiter und wartet auf deren Ende. Beim direkten Aufruf der GUI-EXE aus PowerShell verwende `Start-Process -Wait -NoNewWindow`, damit die Shell während der TUI keine Eingaben liest.
 
 Für automatische Scans akzeptiert die EXE weiterhin die bisherigen Kommandozeilenargumente. In PowerShell wartet `Start-Process -Wait -NoNewWindow` auf den Scan und gibt seine Ausgabe im Terminal aus. Mit `-PassThru` steht außerdem der Exitcode zur Verfügung.
 
