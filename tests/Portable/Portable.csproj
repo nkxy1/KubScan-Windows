@@ -2,10 +2,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <ApplicationManifest>../../WinUI/app.manifest</ApplicationManifest>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../packaging/PortableGui.cs" Link="PortableGui.cs" />
     <Compile Include="../../packaging/ExtractionProgress.cs" Link="ExtractionProgress.cs" />
+    <EmbeddedResource Include="../../assets/Kubscan.ico" LogicalName="KubScan.ico" />
   </ItemGroup>
 </Project>
