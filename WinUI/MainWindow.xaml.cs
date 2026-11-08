@@ -50,7 +50,7 @@ public sealed partial class MainWindow : Window
         global::KubScan.App.English = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName != "de";
         InitializeComponent();
         Title = "KubScan " + global::KubScan.App.Version;
-        AppTitleBar.Title = Title;
+        AppVersion.Text = global::KubScan.App.Version;
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Kubscan.ico"));
         SystemBackdrop = new MicaBackdrop();
         if (AppWindowTitleBar.IsCustomizationSupported())
@@ -59,9 +59,9 @@ public sealed partial class MainWindow : Window
             SetTitleBar(AppTitleBar);
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         }
-        else AppTitleBar.Visibility = Visibility.Collapsed;
+        else TitleBarFrame.Visibility = Visibility.Collapsed;
         RestoreTheme();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 690));
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 1380));
         PreferRoundedCorners();
         AppWindow.Closing += Closing;
         Results.ItemsSource = rows;
@@ -169,6 +169,7 @@ public sealed partial class MainWindow : Window
 
     private void UpdateLabels()
     {
+        AppTitleBarSubtitle.Text = L("Netzwerkscanner", "Network Scanner");
         Target.PlaceholderText = L("Subnetz / IP-Bereich", "Subnet / IP range");
         AutomationProperties.SetName(Target, Target.PlaceholderText);
         Search.PlaceholderText = L("Suchen …", "Search …");

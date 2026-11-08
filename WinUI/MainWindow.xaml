@@ -4,13 +4,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:KubScan.WinUI">
     <Grid x:Name="WindowLayout">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TitleBar x:Name="AppTitleBar" Title="KubScan" Height="48">
-            <TitleBar.IconSource>
-                <ImageIconSource ImageSource="ms-appx:///Kubscan.ico"/>
-            </TitleBar.IconSource>
-        </TitleBar>
+        <Border x:Name="TitleBarFrame" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <TitleBar x:Name="AppTitleBar" Height="48">
+                <TitleBar.Resources>
+                    <x:Double x:Key="TitleBarCompactHeight">48</x:Double>
+                    <x:Double x:Key="TitleBarIconMaxWidth">24</x:Double>
+                    <x:Double x:Key="TitleBarIconMaxHeight">24</x:Double>
+                    <HorizontalAlignment x:Key="TitleBarContentHorizontalAlignment">Left</HorizontalAlignment>
+                </TitleBar.Resources>
+                <TitleBar.IconSource>
+                    <ImageIconSource ImageSource="ms-appx:///Kubscan.ico"/>
+                </TitleBar.IconSource>
+                <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <TextBlock Text="KubScan" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AppTitleBarSubtitle" Text="Network Scanner" FontSize="12" FontWeight="Normal"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </TitleBar>
+        </Border>
 
         <Grid x:Name="Root" Grid.Row="1" Padding="16" RowSpacing="10" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.Resources>
@@ -112,7 +125,7 @@
                 </Style>
             </Grid.Style>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <Grid x:Name="Toolbar" ColumnSpacing="8">
@@ -263,15 +276,20 @@
                 </Border>
             </Grid>
 
-            <StackPanel Grid.Row="2" Spacing="5">
+        </Grid>
+
+        <Border Grid.Row="2" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="16,8">
+            <StackPanel Spacing="5">
                 <ProgressBar x:Name="Progress" Visibility="Collapsed"/>
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="Status" Margin="1,0,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                    <TextBlock x:Name="Status" Margin="1,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite"/>
+                    <TextBlock x:Name="AppVersion" Grid.Column="1" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                 </Grid>
             </StackPanel>
-        </Grid>
+        </Border>
     </Grid>
 </Window>
