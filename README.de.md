@@ -17,6 +17,8 @@
 2. Öffne die EXE per Doppelklick für die **grafische Oberfläche**. Aus PowerShell oder CMD startet sie ohne Argumente oder mit `--tui` als **Terminaloberfläche** im selben Fenster.
 3. Wähle **IP** und gib den Bereich deines Netzes ein, etwa `192.168.1.0/24`. Starte mit **Enter** oder **F2**. In der GUI kannst du auch auf den Startknopf klicken.
 
+Beim ersten GUI-Start jeder neuen Version zeigt KubScan beim Entpacken einen Fortschrittsbalken mit Prozentangabe. Du kannst den Vorgang abbrechen und später erneut starten. Weitere Starts verwenden die bereits entpackten Dateien.
+
 ## Grafische Oberfläche
 
 ![KubScan-GUI mit IP-Bereich, Moduswahl und Detailbereich](assets/screenshots/gui.jpg)

@@ -3,6 +3,7 @@ using System.IO;
 namespace KubScan {
  public static class Launcher {
   internal static int[] DefaultPorts => new[]{21,22,23,25,53,80,110,135,139,143,443,445,587,993,995,1433,3306,3389,5432,5900,8080,8443};
+  [STAThread]
   public static int Main(string[] args) {
    int[] ports=DefaultPorts;
    try {

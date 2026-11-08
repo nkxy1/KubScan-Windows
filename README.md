@@ -16,6 +16,8 @@
 2. Double-click the EXE to open the **graphical interface**. From PowerShell or Command Prompt, run it without arguments or with `--tui` to open the **terminal interface** in the same window.
 3. Select **IP** and enter your network range, such as `192.168.1.0/24`. Press **Enter** or **F2** to start. In the GUI, you can also click the start button.
 
+The first GUI launch of each new version shows an extraction progress bar with a percentage. You can cancel and try again later. Subsequent launches reuse the extracted files.
+
 ## Graphical interface
 
 ![KubScan GUI showing the IP range, mode selector, and details pane](assets/screenshots/gui.jpg)

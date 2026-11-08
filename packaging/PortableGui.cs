@@ -73,16 +73,18 @@ internal static class PortableGui
             Directory.CreateDirectory(staging);
             try
             {
+                using var progress = new ExtractionProgress();
                 using var stream = assembly.GetManifestResourceStream("KubScan.WinUI.zip")
                     ?? throw new InvalidDataException("Missing bundled WinUI files.");
                 using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-                archive.ExtractToDirectory(staging);
+                ExtractArchive(archive, staging, progress);
                 if (!File.Exists(Path.Combine(staging, GuiExecutable)))
                     throw new InvalidDataException("Missing bundled WinUI executable.");
                 // Publish only a complete extraction. Another launch may finish first.
                 try { Directory.Move(staging, cache); }
                 catch (IOException) when (File.Exists(executable)) { }
             }
+            catch (OperationCanceledException) { return 0; }
             finally
             {
                 if (Directory.Exists(staging)) Directory.Delete(staging, true);
@@ -97,5 +99,38 @@ internal static class PortableGui
         });
         gui.WaitForExit();
         return gui.ExitCode;
+    }
+
+    private static void ExtractArchive(ZipArchive archive, string staging, ExtractionProgress progress)
+    {
+        long total = 0;
+        foreach (var entry in archive.Entries) total = checked(total + entry.Length);
+        long completed = 0;
+        var buffer = new byte[128 * 1024];
+        var root = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
+        foreach (var entry in archive.Entries)
+        {
+            var destination = Path.GetFullPath(Path.Combine(root, entry.FullName));
+            // Preserve ExtractToDirectory's protection against ZIP path traversal.
+            if (!destination.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Bundled file is outside the extraction directory.");
+            progress.Report(completed, total, entry.Name);
+            if (entry.Name.Length == 0)
+            {
+                Directory.CreateDirectory(destination);
+                continue;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(destination));
+            using var source = entry.Open();
+            using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            int read;
+            while ((read = source.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                output.Write(buffer, 0, read);
+                completed += read;
+                progress.Report(completed, total, entry.Name);
+            }
+        }
+        progress.Report(total, total, "", force: true);
     }
 }

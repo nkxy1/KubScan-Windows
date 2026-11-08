@@ -32,6 +32,7 @@
  </PropertyGroup>
  <ItemGroup Condition="'$(PortableGuiArchive)' != '' and '$(RuntimeIdentifier)' == 'win-x64'">
   <Compile Include="packaging/PortableGui.cs" />
+  <Compile Include="packaging/ExtractionProgress.cs" />
   <EmbeddedResource Include="$(PortableGuiArchive)" LogicalName="KubScan.WinUI.zip" />
  </ItemGroup>
 </Project>
