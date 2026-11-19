@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,6 +37,33 @@ public static partial class App
         });
 
         public static string DefaultTarget() => DefaultSubnet();
+        public static string ActiveNetworkTargets()
+        {
+            var networks = new HashSet<(uint Network, int Prefix)>();
+            foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (adapter.OperationalStatus != OperationalStatus.Up || adapter.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                try
+                {
+                    foreach (var entry in adapter.GetIPProperties().UnicastAddresses)
+                    {
+                        var address = entry.Address;
+                        if (address.AddressFamily != AddressFamily.InterNetwork || address.Equals(IPAddress.Any) || IPAddress.IsLoopback(address))
+                            continue;
+
+                        int prefix = entry.PrefixLength;
+                        uint network = ParseIPv4(address.ToString()) & PrefixMask(prefix);
+                        networks.Add((network, prefix));
+                    }
+                }
+                catch (NetworkInformationException) { }
+            }
+
+            return string.Join(", ", networks.Order().Select(entry => IP(entry.Network) + "/" + entry.Prefix));
+        }
+
         public static string[] Prefixes(string address)
         {
             Parse(address + "/32");
@@ -45,7 +75,11 @@ public static partial class App
         public static string LastTarget() => hasScan ? scannedSubnet :
             throw new InvalidOperationException(Text("Noch kein Scan zum Wiederholen vorhanden.", "No scan to repeat."));
 
-        public static string NormalizeTarget(string target) => ScanTargetLabel(target, Parse(target));
+        public static string NormalizeTarget(string target)
+        {
+            Parse(target, out string normalizedTarget);
+            return normalizedTarget;
+        }
         public static string Text(string de, string en) => ServiceText(de, en);
 
         public static void StartIp(string target, bool continuous)
@@ -54,19 +88,17 @@ public static partial class App
                 throw new InvalidOperationException(Text("Ein Scan läuft bereits.", "A scan is already running."));
             scanError = null;
             target = target.Trim();
+            if (continuous && target.Length > 0 && IsSingleIpInput(target)) target += "/32";
+            var addresses = Parse(target, out string normalizedTarget);
+            cancel?.Dispose();
             if (continuous)
             {
-                if (target.Length > 0 && !target.Contains("/") && !target.Contains("-")) target += "/32";
-                var addresses = Parse(target);
-                if (!hasScan || ScanTargetLabel(target, addresses) != scannedSubnet) hosts.Clear();
-                cancel?.Dispose();
-                StartContinuousScan(target, addresses);
+                if (!hasScan || normalizedTarget != scannedSubnet) hosts.Clear();
+                StartContinuousScan(normalizedTarget, addresses);
             }
             else
             {
-                var addresses = Parse(target);
-                cancel?.Dispose();
-                StartIpScan(target, addresses);
+                StartIpScan(normalizedTarget, addresses);
             }
         }
 

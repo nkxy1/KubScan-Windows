@@ -26,6 +26,8 @@ The first GUI launch of each new version shows an extraction progress bar with a
 
 Enter a subnet such as `192.168.1.0/24`, a range such as `192.168.1.10-25`, or a single IPv4 address. If you enter a single address, the GUI asks for a subnet mask. Choose `/32` to check just that device. Use the arrow next to the input field to see recently or frequently used ranges.
 
+Separate multiple subnets or IP ranges with commas to include them in one scan, for example `192.168.0.0/24, 10.0.0.0/24`. Overlapping IP addresses are scanned once per pass.
+
 The results show each device's IP address, resolved name, MAC address, and vendor when available. To scan repeatedly, enable continuous scanning with the circular arrow or **F3**, then start the scan. KubScan highlights changes such as devices that appear or stop responding. Press **F9** to stop the scan.
 
 ### Discover mDNS services
@@ -76,5 +78,5 @@ Use `scan` to run KubScan from scripts. By default, results appear in the termin
 
 ```powershell
 .\KubScan.exe scan 127.0.0.1/32
-.\KubScan.exe scan 192.168.1.0/24 -csv -txt -OutputPath .\Scanberichte -Ports "22,80,443"
+.\KubScan.exe scan "192.168.0.0/24, 10.0.0.0/24" -csv -txt -OutputPath .\Scanberichte -Ports "22,80,443"
 ```

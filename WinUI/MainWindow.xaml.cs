@@ -32,7 +32,6 @@ public sealed partial class MainWindow : Window
     private bool ready, busy, updating, closing, allowClose;
     private string notice = "";
     private string adapterLabel;
-    private bool narrowToolbar, compactToolbar;
     private bool detailOnRight;
     private double detailWidth = 300, detailHeight = 152;
     private object displayedDetailKey;
@@ -68,7 +67,6 @@ public sealed partial class MainWindow : Window
         timer.Tick += (_, _) => Refresh();
         UpdateModeButtons();
         Root.Loaded += Initialize;
-        Root.SizeChanged += (_, _) => ArrangeToolbar();
         ContentArea.SizeChanged += (_, _) => ArrangeDetails();
         TableCard.SizeChanged += (_, _) => ResizeTable();
         DetailScroll.SizeChanged += (_, _) => { if (ready) RefreshDetails(); };
@@ -122,27 +120,8 @@ public sealed partial class MainWindow : Window
 
     private void SetControlsEnabled(bool enabled)
     {
-        foreach (var control in new Control[] { Target, TargetHistoryButton, AdapterButton, StartButton, ContinuousSwitch, SearchToggle, Search, ExportButton, MoreButton, IpTab, MdnsTab, ArpTab })
+        foreach (var control in new Control[] { Target, TargetHistoryButton, AdapterButton, StartButton, ContinuousSwitch, ActiveNetworksButton, SearchToggle, Search, ExportButton, MoreButton, IpTab, MdnsTab, ArpTab })
             control.IsEnabled = enabled;
-    }
-
-    private void ArrangeToolbar()
-    {
-        bool narrow = Root.ActualWidth < 900;
-        bool compact = Root.ActualWidth < 660;
-        if (narrowToolbar == narrow && compactToolbar == compact) return;
-        narrowToolbar = narrow;
-        compactToolbar = compact;
-
-        Grid.SetColumn(ModeSelector, narrow ? 0 : 1);
-        Grid.SetColumnSpan(ModeSelector, narrow ? 3 : 1);
-        Grid.SetRow(ScanControls, narrow ? 1 : 0);
-        Grid.SetColumnSpan(ScanControls, narrow ? 3 : 1);
-        Grid.SetRow(ToolbarActions, compact ? 2 : narrow ? 1 : 0);
-        Grid.SetColumn(ToolbarActions, narrow ? 0 : 2);
-        Grid.SetColumnSpan(ToolbarActions, narrow ? 3 : 1);
-        ScanControls.Margin = new Thickness(0, narrow ? 8 : 0, 0, 0);
-        ToolbarActions.Margin = new Thickness(0, narrow ? 8 : 0, 0, 0);
     }
 
     private void AddShortcut(VirtualKey key, Func<Task> action, VirtualKeyModifiers modifiers = 0)
@@ -184,6 +163,7 @@ public sealed partial class MainWindow : Window
         ToolTipService.SetToolTip(ExportButton, export);
         AdapterLabel.Text = adapterLabel ?? L("Alle Adapter", "All adapters");
         AutomationProperties.SetName(AdapterButton, AdapterLabel.Text);
+        ScanTargetColumn.MaxWidth = mode == Backend.Mode.Ip ? 645 : 215;
         TargetInput.Visibility = Show(mode == Backend.Mode.Ip);
         var historyLabel = L("Verlauf der Scanbereiche", "Scan range history");
         AutomationProperties.SetName(TargetHistoryButton, historyLabel);
@@ -193,10 +173,12 @@ public sealed partial class MainWindow : Window
         ExportButton.Visibility = Show(mode != Backend.Mode.Arp);
         ContinuousSwitch.Visibility = Show(mode == Backend.Mode.Ip);
         var continuousLabel = L("Dauerscan", "Continuous scan");
-
-
         AutomationProperties.SetName(ContinuousSwitch, continuousLabel);
         ToolTipService.SetToolTip(ContinuousSwitch, continuousLabel);
+        ActiveNetworksButton.Visibility = Show(mode == Backend.Mode.Ip);
+        var networksLabel = L("IPv4-Netze aktiver Netzwerkadapter eintragen", "Fill in IPv4 networks of active adapters");
+        AutomationProperties.SetName(ActiveNetworksButton, networksLabel);
+        ToolTipService.SetToolTip(ActiveNetworksButton, networksLabel);
         UpdatePlacementLabel();
         var resize = L("Detailbereich vergrößern oder verkleinern", "Resize detail pane");
         foreach (var grip in new[] { BelowGrip, RightGrip })
@@ -495,7 +477,18 @@ public sealed partial class MainWindow : Window
     }
 
     private void TargetBeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args) =>
-        args.Cancel = args.NewText.Any(c => c is not (>= '0' and <= '9' or '.' or '/' or '-'));
+        args.Cancel = args.NewText.Any(c => c is not (>= '0' and <= '9' or '.' or '/' or '-' or ',' or ' '));
+
+    private async void ActiveNetworksClicked(object sender, RoutedEventArgs args) => await Perform(async () =>
+    {
+        string targets = await Task.Run(Backend.ActiveNetworkTargets);
+        if (closing) return;
+
+        notice = targets.Length == 0
+            ? L("Keine aktiven IPv4-Netze gefunden.", "No active IPv4 networks found.")
+            : "";
+        if (targets.Length > 0) Target.Text = targets;
+    });
 
     private async void TargetKeyDown(object sender, KeyRoutedEventArgs args)
     {
@@ -529,7 +522,7 @@ public sealed partial class MainWindow : Window
         else if (mode == Backend.Mode.Ip)
         {
             string target = Target.Text.Trim();
-            if (target.Length > 0 && !target.Contains('/') && !target.Contains('-'))
+            if (target.Length > 0 && !target.Contains('/') && !target.Contains('-') && !target.Contains(','))
             {
                 var prefix = new ComboBox { ItemsSource = Backend.Prefixes(target), SelectedIndex = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
                 var dialog = Dialog(L("CIDR-Subnetzmaske", "CIDR subnet mask"), prefix, L("Scan starten", "Start scan"));
@@ -886,7 +879,9 @@ public sealed partial class MainWindow : Window
             throw new InvalidOperationException(L("Windows-Client nicht installiert: ", "Windows client not installed: ") + Path.GetFileName(executable));
         var info = new System.Diagnostics.ProcessStartInfo(executable)
         {
-            UseShellExecute = false,
+            // Console clients (SSH, Telnet, FTP) need their own interactive window
+            // when KubScan is launched without an attached console.
+            UseShellExecute = true,
             WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System)
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
@@ -1144,7 +1139,9 @@ public sealed partial class MainWindow : Window
     {
         string help = L(
             """
-            IP findet Geräte im angegebenen Netz. Gib ein Subnetz wie 192.168.1.0/24, eine einzelne IPv4-Adresse mit anschließender Präfixauswahl oder einen Bereich wie 192.168.1.10-25 ein. Der Pfeil im Feld öffnet den Verlauf mit häufig und zuletzt verwendeten Bereichen. Mit dem Kreispfeil aktivierst du den Dauerscan, der den Bereich wiederholt prüft und Änderungen markiert.
+            IP findet Geräte in den angegebenen Netzen. Gib ein Subnetz wie 192.168.1.0/24, eine einzelne IPv4-Adresse mit anschließender Präfixauswahl oder einen Bereich wie 192.168.1.10-25 ein. Trenne mehrere Subnetze oder Bereiche mit Kommas, etwa 192.168.0.0/24, 10.0.0.0/24. Der Pfeil im Feld öffnet den Verlauf mit häufig und zuletzt verwendeten Bereichen. Mit dem Kreispfeil aktivierst du den Dauerscan, der die Bereiche wiederholt prüft und Änderungen markiert.
+
+            Mit dem Netzwerksymbol mit Abwärtspfeil übernimmst du die IPv4-Bereiche der aktiven Netzwerkadapter ins Adressfeld.
 
             mDNS findet lokal angekündigte Dienste. ARP zeigt ARP-Anfragen auf dem gewählten Netzwerkadapter. Der ARP-Mitschnitt braucht unter Windows Administratorrechte.
 
@@ -1157,7 +1154,9 @@ public sealed partial class MainWindow : Window
             F1 öffnet die Hilfe, F2 startet oder stoppt, F3 schaltet in der IP-Ansicht den Dauerscan um, F7 öffnet die Suche und F9 stoppt. Im Subnetzfeld startet auch Enter den Scan.
             """,
             """
-            IP finds devices on the specified network. Enter a subnet such as 192.168.1.0/24, a single IPv4 address and then select a prefix, or a range such as 192.168.1.10-25. The arrow in the field opens your frequently and recently used ranges. Use the circular arrow to enable continuous scanning, which checks the range repeatedly and highlights changes.
+            IP finds devices on the specified networks. Enter a subnet such as 192.168.1.0/24, a single IPv4 address and then select a prefix, or a range such as 192.168.1.10-25. Separate multiple subnets or ranges with commas, as in 192.168.0.0/24, 10.0.0.0/24. The arrow in the field opens your frequently and recently used ranges. Use the circular arrow to enable continuous scanning, which checks the ranges repeatedly and highlights changes.
+
+            Use the network icon with a downward arrow to fill the address field with the IPv4 ranges of active network adapters.
 
             mDNS discovers services advertised on the local network. ARP shows ARP requests on the selected network adapter. On Windows, ARP capture requires administrator rights.
 

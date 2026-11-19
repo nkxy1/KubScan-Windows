@@ -91,7 +91,7 @@ public static partial class App {
    }
   } catch(System.IO.IOException) {} catch(InvalidOperationException) {}
  }
- public const string Version = "v.1.0.99";
+ public const string Version = "v.1.1.5";
  static readonly ConcurrentDictionary<uint,Host> hosts=new ConcurrentDictionary<uint,Host>();
  static CancellationTokenSource cancel;
  static Task scan;
@@ -279,6 +279,7 @@ public static partial class App {
   {"P           TCP-Ports fuer markierten Host eingeben","P           Enter TCP ports for the selected host"},
   {"F2 / Enter  Scan starten","F2 / Enter  Start scan"},
   {"Scanbereich CIDR oder Start-IP bis End-IP mit -","Scan range: CIDR or start IP to end IP with -"},
+  {"            Mehrere Bereiche mit Komma trennen","            Separate multiple ranges with commas"},
   {"Leertaste   Hostdetails des ausgewaehlten Hosts","Space       Show details of the selected host"},
   {"Esc         Hostdetails schliessen","Esc         Close host details"},
   {"F3          Letzten Scan wiederholen","F3          Repeat the last scan"},
@@ -947,9 +948,15 @@ public static partial class App {
   }
   return address;
  }
- // Expandiert CIDR-Netze und volle oder verkuerzte IPv4-Bereiche innerhalb des Groessenlimits.
- public static uint[] Parse(string input) {
-  input=(input??"").Trim();
+ // Wertet jeden Bereich einzeln aus und fasst ueberlappende Adressen fuer den Scan zusammen.
+ public static uint[] Parse(string input) => Parse(input,out _);
+ static uint[] Parse(string input,out string target) {
+  var ranges=(input??"").Split(',').Select(part=>ParseRange(part.Trim())).ToArray();
+  target=string.Join(", ",ranges.Select(range=>range.Label).Distinct());
+  var addresses=ranges.SelectMany(range=>Enumerable.Range(0,range.Count).Select(i=>range.First+(uint)i));
+  return (ranges.Length==1?addresses:addresses.Distinct()).ToArray();
+ }
+ static (uint First,int Count,string Label) ParseRange(string input) {
   if(input.Contains("-")) {
    string[] range=input.Split('-');
    if(range.Length!=2) throw new ArgumentException("IP-Bereich erwartet, z.B. 10.0.0.1-10.0.0.145.");
@@ -964,20 +971,16 @@ public static partial class App {
    if(last<first) throw new ArgumentException("Die Endadresse muss groesser oder gleich der Startadresse sein.");
    ulong count=(ulong)last-first+1;
    if(count>65536) throw new ArgumentException("Ein IP-Bereich darf hoechstens 65536 Adressen enthalten.");
-   return Enumerable.Range(0,(int)count).Select(i=>first+(uint)i).ToArray();
+   return (first,(int)count,IP(first)+"-"+IP(last));
   }
   string[] p=input.Split('/'); int prefix;
   if(p.Length!=2 || !int.TryParse(p[1],out prefix) || prefix<16 || prefix>32) throw new ArgumentException("CIDR oder IP-Bereich erwartet, z.B. 10.0.0.0/24 oder 10.0.0.1-10.0.0.145 (maximal /16).");
   uint ip=ParseIPv4(p[0]);
-  uint start=ip & (uint.MaxValue << (32-prefix)); int size=1<<(32-prefix),skip=prefix<31?1:0;
-  return Enumerable.Range(skip,size-2*skip).Select(i=>start+(uint)i).ToArray();
+  uint start=ip & PrefixMask(prefix); int size=1<<(32-prefix),skip=prefix<31?1:0;
+  return (start+(uint)skip,size-2*skip,IP(start)+"/"+prefix);
  }
- // Normalisiert den Scanbereich fuer Rescan und Export unabhaengig vom Eingabefeld.
- static string ScanTargetLabel(string input,uint[] addresses) {
-  if(input.Contains("-")) return IP(addresses[0])+"-"+IP(addresses[addresses.Length-1]);
-  int prefix=int.Parse(input.Trim().Split('/')[1]);
-  return IP(addresses[0] & (uint.MaxValue << (32-prefix)))+"/"+prefix;
- }
+ static bool IsSingleIpInput(string input) => input.IndexOfAny(new[]{'/','-',','})<0;
+ static uint PrefixMask(int prefix) => prefix==0?0:uint.MaxValue << (32-prefix);
  // Bevorzugt einen aktiven IPv4-Adapter mit Gateway fuer die /24-Vorbelegung.
  static string DefaultSubnet() {
   try {
@@ -1829,9 +1832,9 @@ public static partial class App {
   if(continuousMode) { if(cancel!=null) cancel.Cancel(); return; }
   if(scan!=null && !scan.IsCompleted) { message="Scan laeuft. Esc bricht ab."; return; }
   string target=hasScan?scannedSubnet:(input??"").Trim();
-  if(target.Length>0 && !target.Contains("/") && !target.Contains("-")) target+="/32";
+  if(target.Length>0 && IsSingleIpInput(target)) target+="/32";
   uint[] addresses;
-  try { addresses=Parse(target); } catch(ArgumentException error) { dialogTitle="FEHLER"; dialogMessage=error.Message; return; }
+  try { addresses=Parse(target,out target); } catch(ArgumentException error) { dialogTitle="FEHLER"; dialogMessage=error.Message; return; }
   StartContinuousScan(target,addresses);
  }
  static void StartContinuousScan(string target,uint[] addresses) {
@@ -1840,7 +1843,7 @@ public static partial class App {
   foreach(var host in hosts.Values) host.ContinuousOrder=0;
   foreach(var host in SortedHosts()) host.ContinuousOrder=++continuousOrder;
   foreach(var pair in hosts.ToArray().OrderBy(pair=>pair.Key)) if(pair.Value.ContinuousOrder==0) pair.Value.ContinuousOrder=++continuousOrder;
-  continuousList=true; continuousMode=true; hasScan=true; scannedSubnet=ScanTargetLabel(target,addresses);
+  continuousList=true; continuousMode=true; hasScan=true; scannedSubnet=target;
   cancel=new CancellationTokenSource(); var token=cancel.Token;
   total=addresses.Length; done=0; message="Continuous";
   scan=Task.Run(async ()=> {
@@ -1871,17 +1874,18 @@ public static partial class App {
    return;
   }
   if(scan!=null && !scan.IsCompleted) { message="Scan laeuft. Esc bricht ab."; return; }
-  if(!input.Contains("/") && !input.Contains("-")) {
+  if(IsSingleIpInput(input)) {
    try { Parse(input+"/32"); }
    catch(ArgumentException e) { dialogTitle="FEHLER"; dialogMessage=e.Message; return; }
    cidrInput=input; cidrIndex=8;
    return;
   }
-  uint[] addresses; try { addresses=Parse(input); } catch(ArgumentException e) { message=e.Message; return; }
-  StartIpScan(input,addresses);
+  uint[] addresses; string target;
+  try { addresses=Parse(input,out target); } catch(ArgumentException e) { dialogTitle="FEHLER"; dialogMessage=e.Message; return; }
+  StartIpScan(target,addresses);
  }
- static void StartIpScan(string input,uint[] addresses) {
-  scannedSubnet=ScanTargetLabel(input,addresses);
+ static void StartIpScan(string target,uint[] addresses) {
+  scannedSubnet=target;
   hasScan=true; detailHost=null;
   searchText=""; searchEditing=false;
   continuousList=false;
@@ -2480,6 +2484,7 @@ public static partial class App {
    "O           Betriebssystem des markierten Hosts abschaetzen",
    "F2 / Enter  Scan starten",
    "Scanbereich CIDR oder Start-IP bis End-IP mit -",
+   "            Mehrere Bereiche mit Komma trennen",
    "Leertaste   Hostdetails des ausgewaehlten Hosts",
    English?"            Arrows / PgUp / PgDn: scroll details":"            Pfeile / Bild auf/ab: Details scrollen",
    "Esc         Hostdetails schliessen",
@@ -2503,7 +2508,7 @@ public static partial class App {
  static string CidrOption(int index) { return FormatCidrOption(cidrInput,index); }
  static string FormatCidrOption(string input,int index) {
   int prefix=32-index;
-  uint mask=uint.MaxValue << (32-prefix),address=ParseIPv4(input);
+  uint mask=PrefixMask(prefix),address=ParseIPv4(input);
   uint network=address&mask;
   uint size=1U << (32-prefix),skip=prefix<31?1U:0U;
   uint count=size-2*skip,first=network+skip,last=network+size-skip-1;
@@ -3019,7 +3024,10 @@ public static partial class App {
    string header=row==0?ModeHeader(w):headerLines[row];
    HeadingLine(row,header,w);
   }
-  Line(headerHeight,new string('\u2500',w),w); SearchLine(headerHeight+1,searchEditing?T("Suchen: ")+searchText+"_":T("Subnetz: ")+input+"_",w); Line(headerHeight+2,rightPane?new string('\u2500',left)+"\u252c"+new string('\u2500',w-left-1):new string('\u2500',w),w);
+  string targetPrompt=T("Subnetz: ");
+  int targetWidth=w-targetPrompt.Length-1;
+  string visibleTarget=input.Length>targetWidth?"…"+input.Substring(input.Length-targetWidth+1):input;
+  Line(headerHeight,new string('\u2500',w),w); SearchLine(headerHeight+1,searchEditing?T("Suchen: ")+searchText+"_":targetPrompt+visibleTarget+"_",w); Line(headerHeight+2,rightPane?new string('\u2500',left)+"\u252c"+new string('\u2500',w-left-1):new string('\u2500',w),w);
   string heading=Cell((hasScan?"  "+Columns("IP","DNS","MAC",T("HERSTELLER"),left-2,columnSizes):new string(' ',left))+(rightPane?"\u2502 "+(hasScan?T("HOSTDETAILS"):""):""),w);
   if(hasScan) {
    int gapSpace=Math.Max(0,left-2-columnSizes.Sum()),columnX=2;
@@ -3944,7 +3952,7 @@ public static partial class App {
   }
  }
 
- sealed class CommandScanOptions { public string Target; public bool Csv,Txt; }
+ sealed class CommandScanOptions { public string Target; public uint[] Addresses; public bool Csv,Txt; }
  // Validiert CLI-Optionen und normalisiert den angegebenen oder automatisch ermittelten Bereich.
  static CommandScanOptions ParseCommandScan(string[] args) {
   if(args==null || args.Length==0 || !string.Equals(args[0],"scan",StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Aufruf: Kubscan scan [Subnetz/IP-Bereich] [-csv] [-txt] [-OutputPath <directory>]");
@@ -3957,8 +3965,8 @@ public static partial class App {
   }
   string input=string.Join(" ",target).Trim();
   if(input.Length==0) input=DefaultSubnet();
-  else if(!input.Contains("/") && !input.Contains("-")) input+="/32";
-  options.Target=ScanTargetLabel(input,Parse(input));
+  else if(IsSingleIpInput(input)) input+="/32";
+  options.Addresses=Parse(input,out options.Target);
   return options;
  }
  // Fuehrt einen automatischen Scan samt optionalem Export aus und liefert definierte Exitcodes.
@@ -3966,13 +3974,13 @@ public static partial class App {
   ConsoleCancelEventHandler handler=null;
   try {
    var options=ParseCommandScan(ConfigureStartupArguments(args));
+   if(scan!=null && !scan.IsCompleted) throw new InvalidOperationException("Scan laeuft. Esc bricht ab.");
    if(scanPorts==null || scanPorts.Length==0 || scanPorts.Any(p=>p<1 || p>65535)) throw new ArgumentException(T("Ports muessen zwischen 1 und 65535 liegen."));
    ports=scanPorts.Distinct().OrderBy(p=>p).ToArray();
    handler=(sender,eventArgs)=>{ eventArgs.Cancel=true; if(cancel!=null) cancel.Cancel(); };
    Console.CancelKeyPress+=handler;
    Console.WriteLine("Scan: "+options.Target);
-   Start(options.Target);
-   if(scan==null) throw new InvalidOperationException(message);
+   StartIpScan(options.Target,options.Addresses);
    scan.GetAwaiter().GetResult();
    if(cancel.IsCancellationRequested) { Console.Error.WriteLine(T("Scan abgebrochen.")); return 130; }
    Console.WriteLine(T("Scan abgeschlossen. Hosts: ")+hosts.Count);
@@ -4104,7 +4112,7 @@ public static partial class App {
       case ConsoleKey.F6: Export(false); break;
       case ConsoleKey.F10: exit=true; break;
       case ConsoleKey.Escape: if(detailHost!=null) detailHost=null; else if(searchText.Length>0) { searchText=""; selected=0; } else if(cancel!=null) cancel.Cancel(); break;
-      case ConsoleKey.Spacebar: if(hasScan) ConfirmSelectedHost(); break;
+      case ConsoleKey.Spacebar: if(input.EndsWith(",",StringComparison.Ordinal)) input+=" "; else if(hasScan) ConfirmSelectedHost(); break;
 
       case ConsoleKey.LeftArrow: ChangeSortColumn(-1); break;
       case ConsoleKey.RightArrow: ChangeSortColumn(1); break;
@@ -4115,7 +4123,7 @@ public static partial class App {
       case ConsoleKey.PageDown: selected=Math.Min(Math.Max(0,SortedHosts().Length-1),selected+Math.Max(1,Console.WindowHeight-headerLines.Length-10)); break;
       case ConsoleKey.DownArrow: selected++; break;
       case ConsoleKey.Backspace: if(input.Length>0) input=input.Substring(0,input.Length-1); break;
-      default: if(input.Length<31 && ((k.KeyChar>='0'&&k.KeyChar<='9')||k.KeyChar=='.'||k.KeyChar=='/'||k.KeyChar=='-')) input+=k.KeyChar; break;
+      default: if((k.KeyChar>='0'&&k.KeyChar<='9')||"./-,".IndexOf(k.KeyChar)>=0) input+=k.KeyChar; break;
      }
     } Thread.Sleep(80);
    }
@@ -4129,7 +4137,11 @@ public static partial class App {
   if(oui.Count<1000) throw new Exception("Embedded OUI database not loaded.");
   if(Parse("192.168.1.42/24").Length!=254 || IP(Parse("192.168.1.42/24")[0])!="192.168.1.1" || IP(Parse("192.168.1.42/24").Last())!="192.168.1.254") throw new Exception("/24");
   if(Parse("10.0.0.0/31").Length!=2 || Parse("127.0.0.1/32").Length!=1 || Parse("10.0.0.0/16").Length!=65534) throw new Exception("Hostbereich");
-  foreach(string s in new[]{"abc","300.1.1.1/24","1.2.3/24","10.0.0.1/33","10.0.0.1/8"}) { bool rejected=false; try { Parse(s); } catch(ArgumentException) { rejected=true; } if(!rejected) throw new Exception(s); }
+  var combined=Parse("192.168.0.14/24, 10.0.0.0/24, 192.168.0.253-255",out string combinedTarget);
+  if(combined.Length!=509 || combined[254]!=ParseIPv4("10.0.0.1") || combined.Last()!=ParseIPv4("192.168.0.255") ||
+     combinedTarget!="192.168.0.0/24, 10.0.0.0/24, 192.168.0.253-192.168.0.255" || !Parse(combinedTarget).SequenceEqual(combined))
+   throw new Exception("Kombinierter Scanbereich");
+  foreach(string s in new[]{"abc","300.1.1.1/24","1.2.3/24","10.0.0.1/33","10.0.0.1/8","10.0.0.0/24,","10.0.0.0/24,,192.168.0.0/24","10.0.0.0/24,ungueltig"}) { bool rejected=false; try { Parse(s); } catch(ArgumentException) { rejected=true; } if(!rejected) throw new Exception(s); }
   if(FormatMac(new byte[]{0,17,34,170,187,255})!="00:11:22:AA:BB:FF") throw new Exception("MAC-Format");
   if(MacAddress("127.0.0.1")!="Nicht verfuegbar (Loopback)") throw new Exception("Loopback-MAC");
   var host=new Host { IP="192.168.1.10", DNS="testhost.example", MAC="00:11:22:AA:BB:FF", Vendor="Testhersteller" };

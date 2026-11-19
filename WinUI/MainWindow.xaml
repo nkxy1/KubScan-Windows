@@ -128,31 +128,23 @@
                 <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid x:Name="Toolbar" ColumnSpacing="8">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border x:Name="ModeSelector" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="8" Padding="3"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                        <ToggleButton x:Name="IpTab" Content="IP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
-                        <ToggleButton x:Name="MdnsTab" Content="mDNS" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
-                        <ToggleButton x:Name="ArpTab" Content="ARP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
-                    </StackPanel>
-                </Border>
-                <StackPanel x:Name="ScanControls" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <Grid x:Name="TargetField" Width="215" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="ScanTargetColumn" Width="*" MaxWidth="645"/>
+                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid VerticalAlignment="Center">
                         <Grid x:Name="TargetInput" Height="38" CornerRadius="{ThemeResource ControlCornerRadius}"
                               BorderThickness="1" BorderBrush="{ThemeResource TextControlBorderBrush}"
                               Background="{ThemeResource TextControlBackground}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="Target" Padding="33,7,4,7" MaxLength="31" BorderThickness="0"
+                            <TextBox x:Name="Target" Padding="33,7,4,7" BorderThickness="0"
                                      Background="Transparent" PlaceholderText="Subnet / IP range" KeyDown="TargetKeyDown"
                                      AutomationProperties.Name="Subnet or IP range" BeforeTextChanging="TargetBeforeTextChanging"/>
                             <Button x:Name="TargetHistoryButton" Grid.Column="1" Width="32" Margin="0,2,2,2" Padding="0"
@@ -168,16 +160,29 @@
                         <FontIcon Glyph="&#xE774;" FontSize="16" Margin="10,0,0,0" HorizontalAlignment="Left"
                                   VerticalAlignment="Center" IsHitTestVisible="False" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </Grid>
-                    <Button x:Name="StartButton" Height="38" MinWidth="38" Padding="10,0" VerticalAlignment="Center"
+                    <Button x:Name="StartButton" Grid.Column="1" Height="38" MinWidth="38" Margin="8,0,0,0" Padding="10,0" VerticalAlignment="Center"
                             Style="{StaticResource AccentButtonStyle}" Click="StartClicked">
                         <FontIcon x:Name="StartIcon" Glyph="&#xE768;" FontSize="14"/>
                     </Button>
-                    <ToggleButton x:Name="ContinuousSwitch" Width="38" Height="38" Padding="0"
+                    <ToggleButton x:Name="ContinuousSwitch" Grid.Column="2" Width="38" Height="38" Margin="8,0,0,0" Padding="0"
                                   VerticalAlignment="Center" Visibility="Collapsed">
                         <FontIcon Glyph="&#xE895;" FontSize="16"/>
                     </ToggleButton>
-                </StackPanel>
-                <StackPanel x:Name="ToolbarActions" Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button x:Name="ActiveNetworksButton" Grid.Column="3" Width="38" Height="38" Margin="8,0,0,0" Padding="0" VerticalAlignment="Center"
+                            Visibility="Collapsed" Click="ActiveNetworksClicked">
+                        <PathIcon Width="18" Height="18"
+                                  Data="M 5,2 H 10 V 7 H 8.25 V 9 H 11.5 V 14 H 13 V 19 H 8 V 14 H 10 V 10.5 H 4 V 14 H 6 V 19 H 1 V 14 H 2.5 V 9 H 6.75 V 7 H 5 Z M 16,3 H 17.5 V 9.5 L 19.5,7.5 L 20.5,8.5 L 16.75,12.25 L 13,8.5 L 14,7.5 L 16,9.5 Z"/>
+                    </Button>
+                    <Border Grid.Column="4" Height="38" Margin="12,0,0,0" Padding="3,0" VerticalAlignment="Center" CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <ToggleButton x:Name="IpTab" Content="IP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                            <ToggleButton x:Name="MdnsTab" Content="mDNS" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                            <ToggleButton x:Name="ArpTab" Content="ARP" Style="{StaticResource ModeStyle}" Click="ModeChanged"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <StackPanel x:Name="SearchField" Orientation="Horizontal" Spacing="4"
                                 HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="SearchToggle" Width="38" Height="38" Padding="0" Background="Transparent"

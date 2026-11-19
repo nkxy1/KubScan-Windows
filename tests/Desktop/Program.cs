@@ -61,8 +61,9 @@ try
     host.Ports = "";
     Require(!Backend.ContextConnections(rows[0]).Any(), "Closed ports must not offer connections.");
 
-    Backend.StartIp("127.0.0.2/32", true);
-    Require(Backend.IsContinuous && Backend.LastTarget() == "127.0.0.2/32", "Continuous scan must use the newly entered target.");
+    Backend.StartIp("127.0.0.2/32,127.0.0.3/32", true);
+    Require(Backend.IsContinuous && Backend.LastTarget() == "127.0.0.2/32, 127.0.0.3/32" && Backend.Progress(mode, 0).Total == 2,
+        "Continuous scan must use all newly entered targets.");
     await Backend.StopAsync(mode).WaitAsync(timeout.Token);
     Require(!Backend.Progress(mode, 0).Running, "Continuous scan did not stop.");
     Require(!ReferenceEquals(rows, Backend.Results(mode, "", 0)), "A new scan must invalidate cached results.");

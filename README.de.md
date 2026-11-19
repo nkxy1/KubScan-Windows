@@ -27,6 +27,8 @@ Beim ersten GUI-Start jeder neuen Version zeigt KubScan beim Entpacken einen For
 
 Du kannst ein Subnetz wie `192.168.1.0/24`, einen Bereich wie `192.168.1.10-25` oder eine einzelne IPv4-Adresse eingeben. Bei einer einzelnen Adresse fragt die GUI nach der Netzmaske. Wähle `/32`, wenn du nur dieses eine Gerät prüfen willst. Über den Pfeil am Eingabefeld öffnest du den Verlauf der zuletzt oder häufig verwendeten Bereiche.
 
+Trenne mehrere Subnetze oder IP-Bereiche mit Kommas, um sie in einem Scan zu erfassen, zum Beispiel `192.168.0.0/24, 10.0.0.0/24`. KubScan prüft überlappende IP-Adressen einmal pro Durchlauf.
+
 Die Ergebnisliste zeigt IP-Adresse, ermittelten Namen, MAC-Adresse und Hersteller, soweit verfügbar. Aktiviere für regelmäßige Wiederholungen den **Dauerscan** über den Kreispfeil oder **F3** und starte den Scan. KubScan markiert Änderungen, etwa neu gefundene oder ausgefallene Geräte. Mit **F9** stoppst du den laufenden Scan.
 
 ### mDNS-Dienste entdecken
@@ -77,5 +79,5 @@ Mit `scan` kannst du KubScan aus Skripten aufrufen. Ohne Exportoption werden die
 
 ```powershell
 .\KubScan.exe scan 127.0.0.1/32
-.\KubScan.exe scan 192.168.1.0/24 -csv -txt -OutputPath .\Scanberichte -Ports "22,80,443"
+.\KubScan.exe scan "192.168.0.0/24, 10.0.0.0/24" -csv -txt -OutputPath .\Scanberichte -Ports "22,80,443"
 ```
